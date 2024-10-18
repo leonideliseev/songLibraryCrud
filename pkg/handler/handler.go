@@ -24,9 +24,9 @@ func (h Handler) InitRoutes(s *gin.Engine) {
 		{
 			songs.GET("/", h.getSongs)
 			songs.POST("/", h.addSong)
-			songs.GET("/:id", h.getSongById)
-			songs.PUT("/:id", h.updateSongById)
-			songs.DELETE("/id", h.deleteSongById)
+			songs.GET("/:id", h.getSong)
+			songs.PUT("/:id", h.updateSong)
+			songs.DELETE("/id", h.deleteSong)
 		}
 	}
 }

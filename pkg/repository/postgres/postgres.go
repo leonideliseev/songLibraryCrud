@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jinzhu/gorm"
+	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/repository"
 )
 
@@ -32,7 +33,7 @@ func NewPostgresRepository(cfg Config) (*repository.Repository, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate()
+	db.AutoMigrate(&models.Song{})
 
 	repo := &repository.Repository{
 		Songs: NewSongsPostgres(db),

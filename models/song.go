@@ -1,9 +1,9 @@
 package models
 
 type Song struct {
-	group       string
-	name        string
-	releaseDate string
-	text 		[]string
-	link 		string
+	Group       string		`gorm:"not null"`
+	Name        string		`gorm:"not null"`
+	ReleaseDate string		`gorm:"not null"`
+	Text 		string		`gorm:"not null"`
+	Link 		string		`gorm:"not null"`
 }
