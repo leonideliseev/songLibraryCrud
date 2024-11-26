@@ -1,11 +1,8 @@
 package postgres
 
 import (
-	"fmt"
-
-	"github.com/jinzhu/gorm"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
-	"github.com/leonideliseev/songLibraryCrud/models"
+	"gorm.io/gorm"
 )
 
 const (
@@ -25,19 +22,8 @@ type Config struct {
 	SSLMode  string
 }
 
-func NewPostgresRepository(cfg Config) (*repository.Repository, error) {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode))
-
-	if err != nil {
-		return nil, err
-	}
-
-	db.AutoMigrate(&models.Song{})
-
-	repo := &repository.Repository{
+func NewPostgresRepository(db *gorm.DB) *repository.Repository {
+	return &repository.Repository{
 		Songs: NewSongsPostgres(db),
 	}
-
-	return repo, nil
 }

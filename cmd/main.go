@@ -6,11 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler"
-	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository/postgres"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
+	"github.com/leonideliseev/songLibraryCrud/internal/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -22,8 +23,8 @@ func main() {
 		logrus.Fatalf("error loading env: %s", err.Error())
 	}
 
-	var repos *repository.Repository
-	repos, err := postgres.NewPostgresRepository(postgres.Config{
+	var db *gorm.DB
+	db, err := utils.PostgresGorm(utils.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -31,13 +32,12 @@ func main() {
 		DBName:   viper.GetString("db.dbname"),
 		SSLMode:  viper.GetString("db.sslmode"),
 	})
-
 	if err != nil {
 		logrus.Fatalf("failed init db: %s", err.Error())
 	}
 
+	repos := postgres.NewPostgresRepository(db)
 	services := service.NewService(repos)
-
 	srv := gin.Default()
 	handler.InitRoutes(srv, services)
 
