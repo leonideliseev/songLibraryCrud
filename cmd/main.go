@@ -5,10 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/leonideliseev/songLibraryCrud/pkg/handler"
-	"github.com/leonideliseev/songLibraryCrud/pkg/repository"
-	"github.com/leonideliseev/songLibraryCrud/pkg/repository/postgres"
-	"github.com/leonideliseev/songLibraryCrud/pkg/service"
+	"github.com/leonideliseev/songLibraryCrud/internal/handler"
+	"github.com/leonideliseev/songLibraryCrud/internal/repository"
+	"github.com/leonideliseev/songLibraryCrud/internal/repository/postgres"
+	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -24,14 +24,14 @@ func main() {
 
 	var repos *repository.Repository
 	repos, err := postgres.NewPostgresRepository(postgres.Config{
-		Host: viper.GetString("db.host"),
-		Port: viper.GetString("db.port"),
+		Host:     viper.GetString("db.host"),
+		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
 		Password: os.Getenv("DB_PASSWORD"),
-		DBName: viper.GetString("db.dbname"),
-		SSLMode: viper.GetString("db.sslmode"),
+		DBName:   viper.GetString("db.dbname"),
+		SSLMode:  viper.GetString("db.sslmode"),
 	})
-	
+
 	if err != nil {
 		logrus.Fatalf("failed init db: %s", err.Error())
 	}

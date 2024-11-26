@@ -1,8 +1,8 @@
 package service
 
 import (
+	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/models"
-	"github.com/leonideliseev/songLibraryCrud/pkg/repository"
 )
 
 type Songs interface {
