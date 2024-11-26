@@ -37,10 +37,9 @@ func main() {
 	}
 
 	services := service.NewService(repos)
-	handlers := handler.NewHandler(services)
 
 	srv := gin.Default()
-	handlers.InitRoutes(srv)
+	handler.InitRoutes(srv, services)
 
 	go func() {
 		if err := srv.Run(viper.GetString("port")); err != nil {
@@ -57,4 +56,18 @@ func initConfig() error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
+}
+
+func router() *gin.Engine {
+	var r *gin.Engine
+
+	if env := os.Getenv("APP_ENV"); env == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+		r = gin.New()
+		r.Use(gin.Recovery())
+	} else {
+		r = gin.Default()
+	}
+
+	return r
 }

@@ -5,28 +5,10 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 )
 
-type Handler struct {
-	service *service.Service
-}
-
-func NewHandler(service *service.Service) *Handler {
-	return &Handler{
-		service: service,
-	}
-}
-
-func (h Handler) InitRoutes(s *gin.Engine) {
-	api := s.Group("/api")
+func InitRoutes(router *gin.Engine, service *service.Service) {
+	router.GET("/ping", ping)
+	api := router.Group("/api/v1")
 	{
-		api.GET("/ping", h.ping)
-
-		songs := api.Group("songs")
-		{
-			songs.GET("/", h.getSongs)
-			songs.POST("/", h.addSong)
-			songs.GET("/:id", h.getSong)
-			songs.PUT("/:id", h.updateSong)
-			songs.DELETE("/id", h.deleteSong)
-		}
+		newSongsRoutes(api.Group("/songs"), service.Songs)
 	}
 }

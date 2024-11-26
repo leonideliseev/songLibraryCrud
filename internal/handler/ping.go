@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Handler) ping(c *gin.Context) {
+func ping(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"ping": "pong",
 	})

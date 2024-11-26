@@ -6,11 +6,28 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/sirupsen/logrus"
 )
 
 const OK = http.StatusOK
+
+type songRouter struct {
+	service service.Songs
+}
+
+func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
+	r := &songRouter{
+		service: service,
+	}
+
+	g.GET("/", r.getSongs)
+	g.POST("/", r.addSong)
+	g.GET("/:id", r.getSong)
+	g.PUT("/:id", r.updateSong)
+	g.DELETE("/id", r.deleteSong)
+}
 
 func getDefaultQuery(c *gin.Context, name, def string) int {
 	param := c.DefaultQuery(name, def)
@@ -41,7 +58,7 @@ func getGroupAndSong(c *gin.Context) (string, string) {
 	return group, song
 }
 
-func (h *Handler) getSongs(c *gin.Context) {
+func (h *songRouter) getSongs(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "10")
     offset := getDefaultQuery(c, "offset", "0")
 
@@ -54,7 +71,7 @@ func (h *Handler) getSongs(c *gin.Context) {
 	c.JSON(OK, songs)
 }
 
-func (h *Handler) addSong(c *gin.Context) {
+func (h *songRouter) addSong(c *gin.Context) {
 	var input models.Song
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -70,7 +87,7 @@ func (h *Handler) addSong(c *gin.Context) {
 	c.JSON(OK, song)
 }
 
-func (h *Handler) getSong(c *gin.Context) {
+func (h *songRouter) getSong(c *gin.Context) {
 	group, song := getGroupAndSong(c)
 
 	songData, err := h.service.GetSong(group, song)
@@ -82,7 +99,7 @@ func (h *Handler) getSong(c *gin.Context) {
 	c.JSON(OK, songData)
 }
 
-func (h *Handler) updateSong(c *gin.Context) {
+func (h *songRouter) updateSong(c *gin.Context) {
 	group, song := getGroupAndSong(c)
 
 	updatedData := &models.Song{
@@ -102,7 +119,7 @@ func (h *Handler) updateSong(c *gin.Context) {
 	c.JSON(OK, songData)
 }
 
-func (h *Handler) deleteSong(c *gin.Context) {
+func (h *songRouter) deleteSong(c *gin.Context) {
 	group, song := getGroupAndSong(c)
 
 	if err := h.service.DeleteSong(group, song); err != nil {
