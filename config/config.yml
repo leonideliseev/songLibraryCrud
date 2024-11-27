@@ -6,3 +6,7 @@ db:
   port: "5432"
   dbname: "songlibrary"
   sslmode: "disable"
+
+repo_implement:
+  engine: "postgresql"
+  sqldriver: "pgx/v5"

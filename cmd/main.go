@@ -1,12 +1,14 @@
 package main
 
 import (
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/leonideliseev/songLibraryCrud/config"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler"
-	"github.com/leonideliseev/songLibraryCrud/internal/repository/postgres"
+	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils"
 	"github.com/sirupsen/logrus"
@@ -14,61 +16,45 @@ import (
 )
 
 func main() {
-	if err := initConfig(); err != nil {
-		logrus.Fatalf("error init configs: %s", err.Error())
+	config.InitConfig()
+	config.LoadEnv()
+
+	srv := initServer()
+	startServer(srv)
+	waitForShutdown(srv)
+}
+
+func initServer() *http.Server {
+	var repo *repository.Repository
+	utils.RepoChoice(repo)
+	
+	serv := service.NewService(repo)
+	hand := handler.NewHandler(serv)
+
+	router := hand.InitRoutes()
+	return &http.Server{
+		Addr:    viper.GetString("port"),
+		Handler: router,
 	}
+}
 
-	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("error loading env: %s", err.Error())
-	}
-
-	//ctx := context.Background()
-
-	conn, err := utils.PostgresPgx(utils.Config{
-		Host:     viper.GetString("db.host"),
-		Port:     viper.GetString("db.port"),
-		Username: viper.GetString("db.username"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   viper.GetString("db.dbname"),
-		SSLMode:  viper.GetString("db.sslmode"),
-	})
-	if err != nil {
-		logrus.Fatalf("failed init db: %s", err.Error())
-	}
-	defer conn.Close()
-
-	repos := postgres.NewPostgresRepository(conn)
-	services := service.NewService(repos)
-	srv := gin.Default()
-	handler.InitRoutes(srv, services)
-
+func startServer(srv *http.Server) {
 	go func() {
-		if err := srv.Run(viper.GetString("port")); err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			logrus.Fatalf("error running server: %s", err.Error())
 		}
 	}()
-
-	logrus.Print("TodoApp Started")
-
-	srv.Run(":8080")
+	logrus.Print("MainApp started")
 }
 
-func initConfig() error {
-	viper.AddConfigPath("configs")
-	viper.SetConfigName("config")
-	return viper.ReadInConfig()
-}
+func waitForShutdown(srv *http.Server) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
 
-func router() *gin.Engine {
-	var r *gin.Engine
+	logrus.Print("TodoApp Shutting Down")
 
-	if env := os.Getenv("APP_ENV"); env == "prod" {
-		gin.SetMode(gin.ReleaseMode)
-		r = gin.New()
-		r.Use(gin.Recovery())
-	} else {
-		r = gin.Default()
+	if err := srv.Close(); err != nil {
+		logrus.Errorf("error occurred on server shutting down: %s", err.Error())
 	}
-
-	return r
 }
