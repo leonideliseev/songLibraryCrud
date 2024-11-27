@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +41,7 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
 	}
 }
 
+// TODO: сделать фильтры по полям
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "10")
     offset := getDefaultQuery(c, "offset", "0")
@@ -59,7 +64,13 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	song, err := h.service.CreateSong(songConvert.FromInputToModel(input))
+	songDetail, err := getSongDetailsFromAPI(input.Group, input.Name) // TODO: добавить валидатор (везде)
+	if err != nil {
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	song, err := h.service.CreateSong(songConvert.FromInputToModel(input, *songDetail))
 
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -71,6 +82,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 	})
 }
 
+// TODO: пагинация по куплетам
 func (h *songRouter) getSong(c *gin.Context) {
 	id := uuidCtx(c)
 
@@ -136,19 +148,42 @@ func getDefaultQuery(c *gin.Context, name, def string) int {
 	return intParam
 }
 
-func getGroupAndSong(c *gin.Context) (string, string) {
-	group := c.Query("group")
-    song := c.Query("song")
-
-	if group == "" || song == "" {
-		handerror.NewErrorResponse(c, http.StatusBadRequest, "group and song parameters are required")
-		return "", ""
-	}
-
-	return group, song
-}
-
 func uuidCtx(c *gin.Context) uuid.UUID {
 	uuidCtx, _ := c.Get(middleware.UuidCtx)
 	return uuidCtx.(uuid.UUID)
 }
+
+func getSongDetailsFromAPI(group, song string) (*dto.SongDetail, error) {
+	apiURL := os.Getenv("EXTERNAL_API_URL") // TODO: изменить
+	if apiURL == "" {
+		return nil, fmt.Errorf("EXTERNAL_API_URL not set in environment")
+	}
+
+	params := url.Values{}
+	params.Add("group", group)
+	params.Add("song", song)
+
+	resp, err := http.Get(apiURL + "?" + params.Encode())
+	if err != nil {
+		return nil, fmt.Errorf("Error making GET request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Error: received status code %d from external API", resp.StatusCode)
+	}
+
+	var songDetail dto.SongDetail
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading response body: %v", err)
+	}
+
+	err = json.Unmarshal(body, &songDetail)
+	if err != nil {
+		return nil, fmt.Errorf("Error unmarshalling response: %v", err)
+	}
+
+	return &songDetail, nil
+}
+

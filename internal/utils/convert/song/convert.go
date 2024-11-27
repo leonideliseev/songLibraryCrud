@@ -10,13 +10,13 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
 )
 
-func FromInputToModel(s dto.RequestCreateSong) models.Song {
+func FromInputToModel(s dto.RequestCreateSong, sd dto.SongDetail) models.Song {
 	return models.Song{
 		GroupName: s.Group,
     	Name: s.Name,
-    	ReleaseDate: s.ReleaseDate,
-    	Text: s.Text,
-		Link: s.Link,
+    	ReleaseDate: sd.ReleaseDate,
+    	Text: sd.Text,
+		Link: sd.Link,
 	}
 }
 

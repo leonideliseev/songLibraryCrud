@@ -2,15 +2,15 @@ package dto
 
 import "github.com/leonideliseev/songLibraryCrud/models"
 
-type CreateSong struct {
-}
-
 type RequestCreateSong struct {
 	Group       string `json:"group" validate:"required" example:"Imagine Dragons"`
-	Name        string `json:"name" validate:"required" example:"Thunder"`
-	ReleaseDate string `json:"release_date" validate:"required" example:"27.04.2017"`
-	Text 		string `json:"text" validate:"required" example:"very much cool song text"`
-	Link 		string `json:"link" validate:"required,url" example:"https://www.youtube.com/watch?v=fKopy74weus"`
+	Name        string `json:"song" validate:"required" example:"Thunder"`
+}
+
+type SongDetail struct {
+	ReleaseDate string `json:"release_date" validate:"required"`
+	Text 		string `json:"text" validate:"required"`
+	Link 		string `json:"link" validate:"required"`
 }
 
 type ResponseCreateSong struct {
