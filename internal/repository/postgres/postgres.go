@@ -5,14 +5,6 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 )
 
-const (
-	usersTable      = "users"
-	todoListTable   = "todo_lists"
-	usersListTable  = "user_lists"
-	todoItemsTable  = "todo_items"
-	listsItemsTable = "lists_items"
-)
-
 type Config struct {
 	Host     string
 	Port     string

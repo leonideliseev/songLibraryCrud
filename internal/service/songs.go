@@ -19,9 +19,7 @@ func NewSongsService(repo repository.Songs) *SongsService {
 	}
 }
 
-var ctx context.Context // TODO: временно
-
-func (s *SongsService) GetAll(limit, offset int) ([]models.Song, error) {
+func (s *SongsService) GetAll(ctx context.Context, limit, offset int) ([]models.Song, error) {
 	songs, err := s.repo.GetAll(ctx, limit, offset)
 	if err != nil {
 		return nil, err
@@ -30,7 +28,7 @@ func (s *SongsService) GetAll(limit, offset int) ([]models.Song, error) {
 	return songs, nil
 }
 
-func (s *SongsService) CreateSong(song models.Song) (models.Song, error) {
+func (s *SongsService) CreateSong(ctx context.Context, song models.Song) (models.Song, error) {
 	song, err := s.repo.CreateSong(ctx, song)
 	if err != nil {
 		return models.Song{}, err
@@ -38,7 +36,7 @@ func (s *SongsService) CreateSong(song models.Song) (models.Song, error) {
 	return song, nil
 }
 
-func (s *SongsService) GetSong(id uuid.UUID) (models.Song, error) {
+func (s *SongsService) GetSong(ctx context.Context, id uuid.UUID) (models.Song, error) {
 	song, err := s.repo.GetSong(ctx, id)
 	if err != nil {
 		return models.Song{}, err
@@ -47,7 +45,7 @@ func (s *SongsService) GetSong(id uuid.UUID) (models.Song, error) {
 	return song, nil
 }
 
-func (s *SongsService) UpdateSong(id uuid.UUID, updatedData models.Song) (models.Song, error) {
+func (s *SongsService) UpdateSong(ctx context.Context, id uuid.UUID, updatedData models.Song) (models.Song, error) {
 	song, err := s.repo.GetSong(ctx, id)
 	if err != nil {
 		return models.Song{}, err
@@ -63,6 +61,6 @@ func (s *SongsService) UpdateSong(id uuid.UUID, updatedData models.Song) (models
 	return song, nil
 }
 
-func (s *SongsService) DeleteSong(id uuid.UUID) error {
+func (s *SongsService) DeleteSong(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteSong(ctx, id)
 }
