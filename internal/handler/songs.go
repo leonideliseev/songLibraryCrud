@@ -6,11 +6,13 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/dto"
+	handerror "github.com/leonideliseev/songLibraryCrud/internal/handler/error"
+	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
-	"github.com/sirupsen/logrus"
 )
 
 const OK = http.StatusOK
@@ -27,7 +29,7 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
 	g.GET("/", r.getSongs)  // получение библиотеки с пагинацией
 	g.POST("/", r.createSong)  // добавление новой песни
 
-	id := g.Group("/id", )
+	id := g.Group("/id", middleware.CheckId())
 	{
 		id.GET("", r.getSong)  // получение текста песни
 		id.PATCH("", r.updateSong)  // изменение данных песни
@@ -41,7 +43,7 @@ func (h *songRouter) getSongs(c *gin.Context) {
 
 	songs, err := h.service.GetAll(limit, offset)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -53,14 +55,14 @@ func (h *songRouter) getSongs(c *gin.Context) {
 func (h *songRouter) createSong(c *gin.Context) {
 	var input dto.RequestCreateSong
 	if err := c.BindJSON(&input); err != nil {
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	song, err := h.service.CreateSong(songConvert.FromInputToModel(input))
 
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -70,11 +72,11 @@ func (h *songRouter) createSong(c *gin.Context) {
 }
 
 func (h *songRouter) getSong(c *gin.Context) {
-	id := c.Param("id") // TODO: валидировать id чтобы было UUID
+	id := uuidCtx(c)
 
 	songData, err := h.service.GetSong(id)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -85,7 +87,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 
 // TODO: сделать получение данных с помощью dto.UpdateSong
 func (h *songRouter) updateSong(c *gin.Context) {
-	id := c.Param("id")
+	id := uuidCtx(c)
 
 	updatedData := models.Song{
 		GroupName: "group",
@@ -97,7 +99,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 
 	songData, err := h.service.UpdateSong(id, updatedData)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -107,23 +109,14 @@ func (h *songRouter) updateSong(c *gin.Context) {
 }
 
 func (h *songRouter) deleteSong(c *gin.Context) {
-	id := c.Param("id")
+	id := uuidCtx(c)
 
 	if err := h.service.DeleteSong(id); err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.Status(OK)
-}
-
-type errorResponse struct {
-	Message string `json:"message"`
-}
-
-func newErrorResponse(c *gin.Context, statusCode int, message string) {
-	logrus.Error(message)
-	c.AbortWithStatusJSON(statusCode, errorResponse{message})
 }
 
 func getDefaultQuery(c *gin.Context, name, def string) int {
@@ -131,12 +124,12 @@ func getDefaultQuery(c *gin.Context, name, def string) int {
 
 	intParam, err := strconv.Atoi(param)
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return 0
 	}
 
 	if intParam < 0 {
-		newErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be negative", name))
+		handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be negative", name))
 		return 0
 	}
 
@@ -148,9 +141,14 @@ func getGroupAndSong(c *gin.Context) (string, string) {
     song := c.Query("song")
 
 	if group == "" || song == "" {
-		newErrorResponse(c, http.StatusBadRequest, "group and song parameters are required")
+		handerror.NewErrorResponse(c, http.StatusBadRequest, "group and song parameters are required")
 		return "", ""
 	}
 
 	return group, song
+}
+
+func uuidCtx(c *gin.Context) uuid.UUID {
+	uuidCtx, _ := c.Get(middleware.UuidCtx)
+	return uuidCtx.(uuid.UUID)
 }
