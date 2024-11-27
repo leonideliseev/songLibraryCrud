@@ -63,14 +63,18 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	songDetail, err := getSongDetailsFromAPI(input.Group, input.Name) // TODO: добавить валидатор (везде)
+	if err := validate.Struct(input); err != nil {
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	songDetail, err := getSongDetailsFromAPI(input.Group, input.Name)
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	song, err := h.service.CreateSong(songConvert.FromInputToModel(input, *songDetail))
-
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -101,6 +105,11 @@ func (h *songRouter) updateSong(c *gin.Context) {
 
 	var input dto.RequestUpdateSong
 	if err := c.ShouldBindJSON(&input); err != nil {
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validate.Struct(input); err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
