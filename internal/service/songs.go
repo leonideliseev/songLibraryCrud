@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
+	songConvert "github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
 )
 
@@ -46,15 +47,22 @@ func (s *SongsService) GetSong(id uuid.UUID) (models.Song, error) {
 	return song, nil
 }
 
-func (s *SongsService) DeleteSong(id uuid.UUID) error {
-	return s.repo.DeleteSong(ctx, id)
-}
-
 func (s *SongsService) UpdateSong(id uuid.UUID, updatedData models.Song) (models.Song, error) {
-	song, err := s.repo.UpdateSong(ctx, id, updatedData)
+	song, err := s.repo.GetSong(ctx, id)
+	if err != nil {
+		return models.Song{}, err
+	}
+
+	songConvert.UniteModel(&song, &updatedData)
+
+	song, err = s.repo.UpdateSong(ctx, song)
 	if err != nil {
 		return models.Song{}, err
 	}
 
 	return song, nil
+}
+
+func (s *SongsService) DeleteSong(id uuid.UUID) error {
+	return s.repo.DeleteSong(ctx, id)
 }

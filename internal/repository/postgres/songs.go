@@ -24,7 +24,7 @@ func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
 }
 
 func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]models.Song, error) {
-	songsModel, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
+	songsQuery, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
         Limit: int32(limit),
         Offset: int32(offset),
     })
@@ -32,18 +32,18 @@ func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]models
 		return nil, err
 	}
 
-	songs := make([]models.Song, 0, len(songsModel))
-	for _, sm := range songsModel {
-		songs = append(songs, songConvert.FromModelToApp(sm))
+	songs := make([]models.Song, 0, len(songsQuery))
+	for _, sq := range songsQuery {
+		songs = append(songs, songConvert.FromQueryToApp(sq))
 	}
 
 	return songs, nil
 }
 
 func (d *SongsPostgres) CreateSong(ctx context.Context, s models.Song) (models.Song, error) {
-	createSong := songConvert.FromAppToModel(s)
+	createSong := songConvert.FromAppToQuery(s)
 
-	songModel, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
+	songQuery, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
 		GroupName: createSong.GroupName,
 		Name: createSong.Name,
 		ReleaseDate: createSong.ReleaseDate,
@@ -54,31 +54,53 @@ func (d *SongsPostgres) CreateSong(ctx context.Context, s models.Song) (models.S
 		return models.Song{}, err
 	}
 
-	song := songConvert.FromModelToApp(songModel)
+	song := songConvert.FromQueryToApp(songQuery)
 
 	return song, nil
 }
 
 func (d *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (models.Song, error) {
-	uuid := pgtype.UUID{
-		Bytes: id,
-		Valid: true,
-	}
+	uuid := toUUID(id)
 
-	songModel, err := d.queries.GetSong(ctx, uuid)
+	songQuery, err := d.queries.GetSong(ctx, uuid)
 	if err != nil {
 		return models.Song{}, err
 	}
 
-	song := songConvert.FromModelToApp(songModel)
+	song := songConvert.FromQueryToApp(songQuery)
+
+	return song, nil
+}
+
+func (d *SongsPostgres) UpdateSong(ctx context.Context, updatedData models.Song) (models.Song, error) {
+	updateSong := songConvert.FromAppToQuery(updatedData)
+
+	songQuery, err := d.queries.UpdateSong(ctx, queries.UpdateSongParams{
+		ID: updateSong.ID,
+		GroupName: updateSong.GroupName,
+		Name: updateSong.Name,
+		ReleaseDate: updateSong.ReleaseDate,
+		Text: updateSong.Text,
+		Link: updateSong.Link,
+	})
+	if err != nil {
+		return models.Song{}, err
+	}
+
+	song := songConvert.FromQueryToApp(songQuery)
 
 	return song, nil
 }
 
 func (d *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
-	return nil
+	uuid := toUUID(id)
+
+	return d.queries.DeleteSong(ctx, uuid)
 }
 
-func (d *SongsPostgres) UpdateSong(ctx context.Context, id uuid.UUID, updatedData models.Song) (models.Song, error) {
-	return models.Song{}, nil
+func toUUID(id uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{
+		Bytes: id,
+		Valid: true,
+	}
 }

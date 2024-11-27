@@ -17,15 +17,12 @@ type ResponseCreateSong struct {
 	Song *models.Song `json:"song"`
 }
 
-type UpdateSong struct {
+type RequestUpdateSong struct {
 	Group       *string `json:"group,omitempty" validate:"omitempty,required" example:"Imagine Dragons"`
 	Name        *string `json:"name,omitempty" validate:"omitempty,required" example:"Thunder"`
 	ReleaseDate *string `json:"release_date,omitempty" validate:"omitempty,required" example:"27.04.2017"`
 	Text 		*string `json:"text,omitempty" validate:"omitempty,required" example:"very much cool song text"`
 	Link 		*string `json:"link,omitempty" validate:"omitempty,url" example:"https://www.youtube.com/watch?v=fKopy74weus"`
-}
-
-type RequestUpdateSong struct {
 }
 
 type ResponseUpdateSong struct {

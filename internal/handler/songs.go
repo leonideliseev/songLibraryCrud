@@ -16,7 +16,6 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
-	"github.com/leonideliseev/songLibraryCrud/models"
 )
 
 const OK = http.StatusOK
@@ -59,7 +58,7 @@ func (h *songRouter) getSongs(c *gin.Context) {
 
 func (h *songRouter) createSong(c *gin.Context) {
 	var input dto.RequestCreateSong
-	if err := c.BindJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -97,19 +96,16 @@ func (h *songRouter) getSong(c *gin.Context) {
 	})
 }
 
-// TODO: сделать получение данных с помощью dto.UpdateSong
 func (h *songRouter) updateSong(c *gin.Context) {
 	id := uuidCtx(c)
 
-	updatedData := models.Song{
-		GroupName: "group",
-		Name: "song",
-		ReleaseDate: "ppp",
-		Text: "ppp",
-		Link: "ppp",
+	var input dto.RequestUpdateSong
+	if err := c.ShouldBindJSON(&input); err != nil {
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	songData, err := h.service.UpdateSong(id, updatedData)
+	songData, err := h.service.UpdateSong(id, songConvert.FromInputUpdateToModel(input))
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
