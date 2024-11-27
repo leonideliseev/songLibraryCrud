@@ -26,9 +26,13 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
 
 	g.GET("/", r.getSongs)  // получение библиотеки с пагинацией
 	g.POST("/", r.createSong)  // добавление новой песни
-	g.GET("/:id", r.getSong)  // получение текста песни
-	g.PATCH("/:id", r.updateSong)  // изменение данных песни
-	g.DELETE("/:id", r.deleteSong)  // удаление песни
+
+	id := g.Group("/id", )
+	{
+		id.GET("", r.getSong)  // получение текста песни
+		id.PATCH("", r.updateSong)  // изменение данных песни
+		id.DELETE("", r.deleteSong)  // удаление песни
+	}
 }
 
 func (h *songRouter) getSongs(c *gin.Context) {
@@ -53,7 +57,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	song, err := h.service.CreateSong(songConvert.FromHandToServ(input))
+	song, err := h.service.CreateSong(songConvert.FromInputToModel(input))
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -66,9 +70,9 @@ func (h *songRouter) createSong(c *gin.Context) {
 }
 
 func (h *songRouter) getSong(c *gin.Context) {
-	group, song := getGroupAndSong(c)
+	id := c.Param("id") // TODO: валидировать id чтобы было UUID
 
-	songData, err := h.service.GetSong(group, song)
+	songData, err := h.service.GetSong(id)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -81,17 +85,17 @@ func (h *songRouter) getSong(c *gin.Context) {
 
 // TODO: сделать получение данных с помощью dto.UpdateSong
 func (h *songRouter) updateSong(c *gin.Context) {
-	group, song := getGroupAndSong(c)
+	id := c.Param("id")
 
 	updatedData := models.Song{
-		GroupName: group,
-		Name: song,
+		GroupName: "group",
+		Name: "song",
 		ReleaseDate: "ppp",
 		Text: "ppp",
 		Link: "ppp",
 	}
 
-	songData, err := h.service.UpdateSong(group, song, updatedData)
+	songData, err := h.service.UpdateSong(id, updatedData)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -103,9 +107,9 @@ func (h *songRouter) updateSong(c *gin.Context) {
 }
 
 func (h *songRouter) deleteSong(c *gin.Context) {
-	group, song := getGroupAndSong(c)
+	id := c.Param("id")
 
-	if err := h.service.DeleteSong(group, song); err != nil {
+	if err := h.service.DeleteSong(id); err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

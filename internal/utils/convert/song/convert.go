@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/leonideliseev/songLibraryCrud/models/sqlc/queries"
+	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
 )
 
-func FromHandToServ(s dto.RequestCreateSong) models.Song {
+func FromInputToModel(s dto.RequestCreateSong) models.Song {
 	return models.Song{
 		GroupName: s.Group,
     	Name: s.Name,
@@ -20,7 +20,7 @@ func FromHandToServ(s dto.RequestCreateSong) models.Song {
 	}
 }
 
-func FromServToRepo(s models.Song) queries.Song {
+func FromAppToModel(s models.Song) queries.Song {
 	parsedDate, _ := time.Parse("02.01.2006", s.ReleaseDate)
 
 	return queries.Song{
@@ -32,7 +32,7 @@ func FromServToRepo(s models.Song) queries.Song {
 	}
 }
 
-func FromRepoToServ(s queries.Song) models.Song {
+func FromModelToApp(s queries.Song) models.Song {
 	return models.Song{
 		ID: string(s.ID.Bytes[:]),
 		GroupName: s.GroupName,

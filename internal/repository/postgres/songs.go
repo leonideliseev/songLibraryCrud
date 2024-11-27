@@ -3,8 +3,12 @@ package postgres
 import (
 	"context"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/leonideliseev/songLibraryCrud/models/sqlc/queries"
+	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
+	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
+	"github.com/leonideliseev/songLibraryCrud/models"
 )
 
 type SongsPostgres struct {
@@ -19,8 +23,8 @@ func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
 	}
 }
 
-func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]queries.Song, error) {
-	songs, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
+func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]models.Song, error) {
+	songsModel, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
         Limit: int32(limit),
         Offset: int32(offset),
     })
@@ -28,40 +32,53 @@ func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]querie
 		return nil, err
 	}
 
+	songs := make([]models.Song, 0, len(songsModel))
+	for _, sm := range songsModel {
+		songs = append(songs, songConvert.FromModelToApp(sm))
+	}
+
 	return songs, nil
 }
 
-func (d *SongsPostgres) CreateSong(ctx context.Context, s queries.Song) (queries.Song, error) {
-	song, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
-		GroupName: s.GroupName,
-		Name: s.Name,
-		ReleaseDate: s.ReleaseDate,
-		Text: s.Text,
-		Link: s.Link,
+func (d *SongsPostgres) CreateSong(ctx context.Context, s models.Song) (models.Song, error) {
+	createSong := songConvert.FromAppToModel(s)
+
+	songModel, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
+		GroupName: createSong.GroupName,
+		Name: createSong.Name,
+		ReleaseDate: createSong.ReleaseDate,
+		Text: createSong.Text,
+		Link: createSong.Link,
 	})
 	if err != nil {
-		return queries.Song{}, err
+		return models.Song{}, err
 	}
+
+	song := songConvert.FromModelToApp(songModel)
 
 	return song, nil
 }
 
-func (d *SongsPostgres) GetSong(ctx context.Context, group, name string) (queries.Song, error) {
-	song, err := d.queries.GetSong(ctx, queries.GetSongParams{
-		GroupName: group,
-		Name: name,
-	})
-	if err != nil {
-		return queries.Song{}, err
+func (d *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (models.Song, error) {
+	uuid := pgtype.UUID{
+		Bytes: id,
+		Valid: true,
 	}
+
+	songModel, err := d.queries.GetSong(ctx, uuid)
+	if err != nil {
+		return models.Song{}, err
+	}
+
+	song := songConvert.FromModelToApp(songModel)
 
 	return song, nil
 }
 
-func (d *SongsPostgres) DeleteSong(ctx context.Context, group, name string) error {
+func (d *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (d *SongsPostgres) UpdateSong(ctx context.Context, group, name string, updatedData queries.Song) (queries.Song, error) {
-	return queries.Song{}, nil
+func (d *SongsPostgres) UpdateSong(ctx context.Context, id uuid.UUID, updatedData models.Song) (models.Song, error) {
+	return models.Song{}, nil
 }

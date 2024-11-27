@@ -11,10 +11,6 @@ RETURNING *;
 -- name: GetSong :one
 SELECT id, group_name, name, release_date, text, link
 FROM songs
-WHERE group_name = $1 AND name = $2;
-
--- name: DeleteSong :exec
-DELETE FROM songs
 WHERE id = $1;
 
 -- name: UpdateSong :one
@@ -23,3 +19,6 @@ SET group_name = $2, name = $3, release_date = $4, text = $5, link = $6
 WHERE id = $1
 RETURNING *;
 
+-- name: DeleteSong :exec
+DELETE FROM songs
+WHERE id = $1;

@@ -58,16 +58,11 @@ func (q *Queries) DeleteSong(ctx context.Context, id pgtype.UUID) error {
 const getSong = `-- name: GetSong :one
 SELECT id, group_name, name, release_date, text, link
 FROM songs
-WHERE group_name = $1 AND name = $2
+WHERE id = $1
 `
 
-type GetSongParams struct {
-	GroupName string
-	Name      string
-}
-
-func (q *Queries) GetSong(ctx context.Context, arg GetSongParams) (Song, error) {
-	row := q.db.QueryRow(ctx, getSong, arg.GroupName, arg.Name)
+func (q *Queries) GetSong(ctx context.Context, id pgtype.UUID) (Song, error) {
+	row := q.db.QueryRow(ctx, getSong, id)
 	var i Song
 	err := row.Scan(
 		&i.ID,
