@@ -3,6 +3,9 @@ package dto
 import "github.com/leonideliseev/songLibraryCrud/models"
 
 type CreateSong struct {
+}
+
+type RequestCreateSong struct {
 	Group       string `json:"group" validate:"required" example:"Imagine Dragons"`
 	Name        string `json:"name" validate:"required" example:"Thunder"`
 	ReleaseDate string `json:"release_date" validate:"required" example:"27.04.2017"`
@@ -10,12 +13,8 @@ type CreateSong struct {
 	Link 		string `json:"link" validate:"required,url" example:"https://www.youtube.com/watch?v=fKopy74weus"`
 }
 
-type RequestCreateSong struct {
-	CreateSong
-}
-
 type ResponseCreateSong struct {
-	Song *models.Song
+	Song *models.Song `json:"song"`
 }
 
 type UpdateSong struct {
@@ -34,7 +33,7 @@ type ResponseUpdateSong struct {
 }
 
 type ResponseGetSongs struct {
-	Songs []*models.Song
+	Songs []models.Song
 }
 
 type ResponseGetSong struct {

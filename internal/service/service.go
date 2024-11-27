@@ -6,11 +6,11 @@ import (
 )
 
 type Songs interface {
-	GetAll(limit, offest int) ([]*models.Song, error)
-	CreateSong(song models.Song) (*models.Song, error)
-	GetSong(group, name string) (*models.Song, error)
+	GetAll(limit, offest int) ([]models.Song, error)
+	CreateSong(song models.Song) (models.Song, error)
+	GetSong(group, name string) (models.Song, error)
 	DeleteSong(group, name string) error
-	UpdateSong(group, name string, updatedData *models.Song) (*models.Song, error)
+	UpdateSong(group, name string, updatedData models.Song) (models.Song, error)
 }
 
 type Service struct {

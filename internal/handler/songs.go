@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/dto"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
+	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/sirupsen/logrus"
 )
@@ -46,19 +47,13 @@ func (h *songRouter) getSongs(c *gin.Context) {
 }
 
 func (h *songRouter) createSong(c *gin.Context) {
-	var input dto.CreateSong
+	var input dto.RequestCreateSong
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	song, err := h.service.CreateSong(models.Song{
-		Group: input.Group,
-		Name: input.Name,
-		ReleaseDate: input.ReleaseDate,
-		Text: input.Text,
-		Link: input.Link,
-	})
+	song, err := h.service.CreateSong(songConvert.FromHandToServ(input))
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -66,7 +61,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseCreateSong{
-		Song: song,
+		Song: &song,
 	})
 }
 
@@ -80,7 +75,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseGetSong{
-		Song: songData,
+		Song: &songData,
 	})
 }
 
@@ -88,8 +83,8 @@ func (h *songRouter) getSong(c *gin.Context) {
 func (h *songRouter) updateSong(c *gin.Context) {
 	group, song := getGroupAndSong(c)
 
-	updatedData := &models.Song{
-		Group: group,
+	updatedData := models.Song{
+		GroupName: group,
 		Name: song,
 		ReleaseDate: "ppp",
 		Text: "ppp",
@@ -103,7 +98,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseUpdateSong{
-		Song: songData,
+		Song: &songData,
 	})
 }
 

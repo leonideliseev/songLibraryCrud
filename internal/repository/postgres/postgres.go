@@ -1,8 +1,8 @@
 package postgres
 
 import (
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
-	"gorm.io/gorm"
 )
 
 const (
@@ -22,7 +22,7 @@ type Config struct {
 	SSLMode  string
 }
 
-func NewPostgresRepository(db *gorm.DB) *repository.Repository {
+func NewPostgresRepository(db *pgxpool.Pool) *repository.Repository {
 	return &repository.Repository{
 		Songs: NewSongsPostgres(db),
 	}

@@ -1,97 +1,67 @@
 package postgres
 
 import (
-	"github.com/leonideliseev/songLibraryCrud/models"
-	"gorm.io/gorm"
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/leonideliseev/songLibraryCrud/models/sqlc/queries"
 )
 
 type SongsPostgres struct {
-	db *gorm.DB
+	queries *queries.Queries
 }
 
-func NewSongsPostgres(db *gorm.DB) *SongsPostgres {
+func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
+    queries := queries.New(conn)
+
 	return &SongsPostgres{
-		db: db,
+		queries: queries,
 	}
 }
 
-func (d *SongsPostgres) GetAll(limit, offset int) ([]*models.Song, error) {
-	var songs []*models.Song
-
-	if err := d.db.Limit(limit).Offset(offset).Find(&songs).Error; err != nil {
+func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]queries.Song, error) {
+	songs, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
+        Limit: int32(limit),
+        Offset: int32(offset),
+    })
+	if err != nil {
 		return nil, err
 	}
 
 	return songs, nil
 }
 
-func (d *SongsPostgres) CreateSong(s models.Song) (*models.Song, error) {
-	if err := d.db.Create(&s).Error; err != nil {
-		return nil, err
+func (d *SongsPostgres) CreateSong(ctx context.Context, s queries.Song) (queries.Song, error) {
+	song, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
+		GroupName: s.GroupName,
+		Name: s.Name,
+		ReleaseDate: s.ReleaseDate,
+		Text: s.Text,
+		Link: s.Link,
+	})
+	if err != nil {
+		return queries.Song{}, err
 	}
 
-	return &s, nil
+	return song, nil
 }
 
-func (d *SongsPostgres) GetSong(group, name string) (*models.Song, error) {
-	var song models.Song
-
-	// Найдем существующую запись по уникальной паре "group" и "name"
-	if err := d.db.Where("group = ? AND name = ?", group, name).First(&song).Error; err != nil {
-		return nil, err
+func (d *SongsPostgres) GetSong(ctx context.Context, group, name string) (queries.Song, error) {
+	song, err := d.queries.GetSong(ctx, queries.GetSongParams{
+		GroupName: group,
+		Name: name,
+	})
+	if err != nil {
+		return queries.Song{}, err
 	}
 
-	return &song, nil
+	return song, nil
 }
 
-func (d *SongsPostgres) DeleteSong(group, name string) error {
-	var song models.Song
-
-	// Найдем существующую запись по уникальной паре "group" и "name"
-	if err := d.db.Where("group = ? AND name = ?", group, name).First(&song).Error; err != nil {
-		return err
-	}
-
-	// Удаляем найденную запись
-	if err := d.db.Delete(&song).Error; err != nil {
-		return err
-	}
-
+func (d *SongsPostgres) DeleteSong(ctx context.Context, group, name string) error {
 	return nil
 }
 
-func (d *SongsPostgres) UpdateSong(group, name string, updatedData *models.Song) (*models.Song, error) {
-	var song models.Song
-
-	// Найдем существующую запись по уникальной паре "group" и "name"
-	if err := d.db.Where("group = ? AND name = ?", group, name).First(&song).Error; err != nil {
-		return nil, err
-	}
-
-	// Создаем карту для обновляемых полей
-	updates := make(map[string]interface{})
-
-	// Проверяем каждое поле и добавляем его в карту, если оно не пустое
-	if updatedData.Group != "" {
-		updates["group"] = updatedData.Group
-	}
-	if updatedData.Name != "" {
-		updates["name"] = updatedData.Name
-	}
-	if updatedData.ReleaseDate != "" {
-		updates["release_date"] = updatedData.ReleaseDate
-	}
-	if updatedData.Text != "" {
-		updates["text"] = updatedData.Text
-	}
-	if updatedData.Link != "" {
-		updates["link"] = updatedData.Link
-	}
-
-	// Обновляем только указанные поля
-	if err := d.db.Model(&song).Updates(updates).Error; err != nil {
-		return nil, err
-	}
-
-	return &song, nil
+func (d *SongsPostgres) UpdateSong(ctx context.Context, group, name string, updatedData queries.Song) (queries.Song, error) {
+	return queries.Song{}, nil
 }

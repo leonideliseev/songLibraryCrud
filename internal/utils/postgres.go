@@ -1,11 +1,11 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/leonideliseev/songLibraryCrud/models"
-    "gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Config struct {
@@ -17,19 +17,20 @@ type Config struct {
 	SSLMode  string
 }
 
-func PostgresGorm(cfg Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", 
-    cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode)
+func PostgresPgx(cfg Config) (*pgxpool.Pool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	dsn := PostgresConn(cfg)
 
+	db, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
-	
-	db.AutoMigrate(&models.Song{})
-
-	return db, nil
+	return db, db.Ping(ctx)
 }
 
-func PostgresPgx() {}
+func PostgresConn(cfg Config) string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", 
+    cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode)
+}
