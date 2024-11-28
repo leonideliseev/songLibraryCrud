@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -85,15 +86,29 @@ func (h *songRouter) createSong(c *gin.Context) {
 	})
 }
 
-// TODO: пагинация по куплетам
 func (h *songRouter) getSong(c *gin.Context) {
 	id := uuidCtx(c)
+	limit := getDefaultQuery(c, "limit", "100")
+    offset := getDefaultQuery(c, "offset", "0")
 
 	songData, err := h.service.GetSong(c, id)
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	verses := strings.Split(songData.Text, "\n\n")
+	if offset > len(verses) {
+		handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("offset can`t be more than verses in song"))
+		return
+	}
+
+	if limit > len(verses) {
+		limit = len(verses) + 1
+	}
+
+	selectVerses := verses[offset:limit]
+	songData.Text = strings.Join(selectVerses, "\n\n")
 
 	c.JSON(OK, dto.ResponseGetSong{
 		Song: songData,
@@ -191,4 +206,3 @@ func getSongDetailsFromAPI(group, song string) (*dto.SongDetail, error) {
 
 	return &songDetail, nil
 }
-
