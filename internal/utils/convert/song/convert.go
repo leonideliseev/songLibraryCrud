@@ -10,8 +10,8 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
 )
 
-func FromInputToModel(s dto.RequestCreateSong, sd dto.SongDetail) models.Song {
-	return models.Song{
+func FromInputToModel(s *dto.RequestCreateSong, sd *dto.SongDetail) *models.Song {
+	return &models.Song{
 		GroupName: s.Group,
     	Name: s.Name,
     	ReleaseDate: sd.ReleaseDate,
@@ -20,16 +20,14 @@ func FromInputToModel(s dto.RequestCreateSong, sd dto.SongDetail) models.Song {
 	}
 }
 
-func FromInputUpdateToModel(s dto.RequestUpdateSong) models.Song {
-	var song models.Song
-
-	song.GroupName = fromPointerToString(s.Group)
-	song.Name = fromPointerToString(s.Name)
-	song.ReleaseDate = fromPointerToString(s.ReleaseDate)
-	song.Text = fromPointerToString(s.Text)
-	song.Link = fromPointerToString(s.Link)
-
-	return song
+func FromInputUpdateToModel(s *dto.RequestUpdateSong) *models.Song {
+	return &models.Song{
+		GroupName: fromPointerToString(s.Group),
+    	Name: fromPointerToString(s.Name),
+    	ReleaseDate: fromPointerToString(s.ReleaseDate),
+    	Text: fromPointerToString(s.Text),
+		Link: fromPointerToString(s.Link),
+	}
 }
 
 func fromPointerToString(ptr *string) string {
@@ -57,10 +55,10 @@ func uniteField(base, update *string) {
 	*base = *update
 }
 
-func FromAppToQuery(s models.Song) queries.Song {
+func FromAppToQuery(s *models.Song) *queries.Song {
 	parsedDate, _ := time.Parse("02.01.2006", s.ReleaseDate)
 
-	return queries.Song{
+	return &queries.Song{
 		GroupName: s.GroupName,
 		Name: s.Name,
 		ReleaseDate: pgtype.Date{Time: parsedDate, Valid: true},
@@ -69,8 +67,8 @@ func FromAppToQuery(s models.Song) queries.Song {
 	}
 }
 
-func FromQueryToApp(s queries.Song) models.Song {
-	return models.Song{
+func FromQueryToApp(s *queries.Song) *models.Song {
+	return &models.Song{
 		ID: string(s.ID.Bytes[:]),
 		GroupName: s.GroupName,
 		Name: s.Name,

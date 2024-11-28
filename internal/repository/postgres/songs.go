@@ -23,7 +23,7 @@ func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
 	}
 }
 
-func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]models.Song, error) {
+func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]*models.Song, error) {
 	songsQuery, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
         Limit: int32(limit),
         Offset: int32(offset),
@@ -32,15 +32,15 @@ func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]models
 		return nil, err
 	}
 
-	songs := make([]models.Song, 0, len(songsQuery))
+	songs := make([]*models.Song, 0, len(songsQuery))
 	for _, sq := range songsQuery {
-		songs = append(songs, songConvert.FromQueryToApp(sq))
+		songs = append(songs, songConvert.FromQueryToApp(&sq))
 	}
 
 	return songs, nil
 }
 
-func (d *SongsPostgres) CreateSong(ctx context.Context, s models.Song) (models.Song, error) {
+func (d *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
 	createSong := songConvert.FromAppToQuery(s)
 
 	songQuery, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
@@ -51,28 +51,28 @@ func (d *SongsPostgres) CreateSong(ctx context.Context, s models.Song) (models.S
 		Link: createSong.Link,
 	})
 	if err != nil {
-		return models.Song{}, err
+		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(songQuery)
+	song := songConvert.FromQueryToApp(&songQuery)
 
 	return song, nil
 }
 
-func (d *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (models.Song, error) {
+func (d *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
 	uuid := toUUID(id)
 
 	songQuery, err := d.queries.GetSong(ctx, uuid)
 	if err != nil {
-		return models.Song{}, err
+		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(songQuery)
+	song := songConvert.FromQueryToApp(&songQuery)
 
 	return song, nil
 }
 
-func (d *SongsPostgres) UpdateSong(ctx context.Context, updatedData models.Song) (models.Song, error) {
+func (d *SongsPostgres) UpdateSong(ctx context.Context, updatedData *models.Song) (*models.Song, error) {
 	updateSong := songConvert.FromAppToQuery(updatedData)
 
 	songQuery, err := d.queries.UpdateSong(ctx, queries.UpdateSongParams{
@@ -84,10 +84,10 @@ func (d *SongsPostgres) UpdateSong(ctx context.Context, updatedData models.Song)
 		Link: updateSong.Link,
 	})
 	if err != nil {
-		return models.Song{}, err
+		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(songQuery)
+	song := songConvert.FromQueryToApp(&songQuery)
 
 	return song, nil
 }

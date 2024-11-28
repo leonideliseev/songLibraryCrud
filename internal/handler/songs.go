@@ -57,8 +57,8 @@ func (h *songRouter) getSongs(c *gin.Context) {
 }
 
 func (h *songRouter) createSong(c *gin.Context) {
-	var input dto.RequestCreateSong
-	if err := c.ShouldBindJSON(&input); err != nil {
+	input := &dto.RequestCreateSong{}
+	if err := c.ShouldBindJSON(input); err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -74,14 +74,14 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	song, err := h.service.CreateSong(c, songConvert.FromInputToModel(input, *songDetail))
+	song, err := h.service.CreateSong(c, songConvert.FromInputToModel(input, songDetail))
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(OK, dto.ResponseCreateSong{
-		Song: &song,
+		Song: song,
 	})
 }
 
@@ -96,15 +96,15 @@ func (h *songRouter) getSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseGetSong{
-		Song: &songData,
+		Song: songData,
 	})
 }
 
 func (h *songRouter) updateSong(c *gin.Context) {
 	id := uuidCtx(c)
 
-	var input dto.RequestUpdateSong
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var input *dto.RequestUpdateSong
+	if err := c.ShouldBindJSON(input); err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -121,7 +121,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseUpdateSong{
-		Song: &songData,
+		Song: songData,
 	})
 }
 
