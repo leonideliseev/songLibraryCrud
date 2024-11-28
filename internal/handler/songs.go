@@ -17,6 +17,7 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
+	"github.com/leonideliseev/songLibraryCrud/models"
 )
 
 const OK = http.StatusOK
@@ -45,8 +46,15 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "10")
     offset := getDefaultQuery(c, "offset", "0")
+	pagModel := &models.Song{ // модель, которая будет считывать поля фильтрации
+		GroupName: c.Query("group_name"),
+		Name: c.Query("name"),
+		ReleaseDate: c.Query("release_date"),
+		Text: c.Query("text"),
+		Link: c.Query("link"),
+	}
 
-	songs, err := h.service.GetAll(c, limit, offset)
+	songs, err := h.service.GetAll(c, limit, offset, pagModel)
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

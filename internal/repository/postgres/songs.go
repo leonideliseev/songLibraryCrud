@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
@@ -12,6 +14,8 @@ import (
 )
 
 type SongsPostgres struct {
+	builder squirrel.StatementBuilderType
+	conn *pgxpool.Pool
 	queries *queries.Queries
 }
 
@@ -19,25 +23,45 @@ func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
     queries := queries.New(conn)
 
 	return &SongsPostgres{
+		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
+		conn: conn,
 		queries: queries,
 	}
 }
 
-func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int) ([]*models.Song, error) {
-	songsQuery, err := d.queries.GetSongs(ctx, queries.GetSongsParams{
-        Limit: int32(limit),
-        Offset: int32(offset),
-    })
+// для этой функции используется squirrel, а не sqlc, так как мне нужна динамическая генерация sql запроса
+func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
+	query := d.builder.Select("*").From("songs").Limit(uint64(limit)).Offset(uint64(offset))
+	query = addWhereWithCondition(query, "group_name", pagModel.GroupName)
+	query = addWhereWithCondition(query, "name", pagModel.Name)
+	query = addWhereWithCondition(query, "release_date", pagModel.ReleaseDate)
+	query = addWhereWithCondition(query, "text", pagModel.Text)
+	query = addWhereWithCondition(query, "link", pagModel.Link)
+
+	q, args, err := query.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	songs := make([]*models.Song, 0, len(songsQuery))
-	for _, sq := range songsQuery {
-		songs = append(songs, songConvert.FromQueryToApp(&sq))
+	rows, err := d.conn.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	songs, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.Song])
+	if err != nil {
+		return nil, err
 	}
 
 	return songs, nil
+}
+
+func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) squirrel.SelectBuilder {
+	if param != "" {
+		return query.Where(squirrel.ILike{field: "%" + param + "%"})
+	}
+	return query
 }
 
 func (d *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {

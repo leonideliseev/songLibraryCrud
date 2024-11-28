@@ -30,7 +30,7 @@ type ResponseUpdateSong struct {
 }
 
 type ResponseGetSongs struct {
-	Songs []*models.Song
+	Songs []models.Song
 }
 
 type ResponseGetSong struct {
