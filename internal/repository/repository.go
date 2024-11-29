@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/models"
-    "github.com/google/uuid"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
+	"github.com/leonideliseev/songLibraryCrud/internal/repository/postgres"
 )
 
 type Songs interface {
@@ -17,4 +20,10 @@ type Songs interface {
 
 type Repository struct {
 	Songs
+}
+
+func New(db *pgxpool.Pool, log *logging.Logger) *Repository {
+	return &Repository{
+		Songs: postgres.NewSongsPostgres(db, log),
+	}
 }

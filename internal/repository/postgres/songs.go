@@ -11,18 +11,21 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
 type SongsPostgres struct {
+	log *logging.Logger
 	builder squirrel.StatementBuilderType
 	conn *pgxpool.Pool
 	queries *queries.Queries
 }
 
-func NewSongsPostgres(conn *pgxpool.Pool) *SongsPostgres {
+func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
     queries := queries.New(conn)
 
 	return &SongsPostgres{
+		log: log,
 		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
 		conn: conn,
 		queries: queries,

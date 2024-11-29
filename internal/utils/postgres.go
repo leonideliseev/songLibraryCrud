@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
-	"github.com/leonideliseev/songLibraryCrud/internal/repository/postgres"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 	"github.com/spf13/viper"
 )
 
@@ -39,7 +39,7 @@ func PostgresConn(cfg Config) string {
     cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode)
 }
 
-func RepoChoice(repo *repository.Repository) {
+func RepoChoice(repo *repository.Repository, log *logging.Logger) {
 	switch viper.GetString("repo_implement.engine") {
 	case "postgresql":
 		switch viper.GetString("repo_implement.sqldriver") {
@@ -57,7 +57,7 @@ func RepoChoice(repo *repository.Repository) {
 			}
 			defer conn.Close()
 		
-			repo = postgres.NewPostgresRepository(conn)
+			repo = repository.New(conn, log)
 		default:
 			panic("")
 		}

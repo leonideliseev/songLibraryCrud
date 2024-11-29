@@ -18,16 +18,19 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
 const OK = http.StatusOK
 
 type songRouter struct {
+	log *logging.Logger
 	service service.Songs
 }
 
-func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
+func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logger) {
 	r := &songRouter{
+		log: log,
 		service: service,
 	}
 
@@ -42,7 +45,6 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs) {
 	}
 }
 
-// TODO: сделать фильтры по полям
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "10")
     offset := getDefaultQuery(c, "offset", "0")

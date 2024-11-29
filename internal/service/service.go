@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/models"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
 type Songs interface {
@@ -20,8 +21,8 @@ type Service struct {
 	Songs
 }
 
-func NewService(repos *repository.Repository) *Service {
+func NewService(repos *repository.Repository, log *logging.Logger) *Service {
 	return &Service{
-		Songs: NewSongsService(repos.Songs),
+		Songs: NewSongsService(repos.Songs, log),
 	}
 }

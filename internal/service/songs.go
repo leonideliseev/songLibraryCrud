@@ -7,14 +7,17 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	songConvert "github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
+	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
 type SongsService struct {
+	log *logging.Logger
 	repo repository.Songs
 }
 
-func NewSongsService(repo repository.Songs) *SongsService {
+func NewSongsService(repo repository.Songs, log *logging.Logger) *SongsService {
 	return &SongsService{
+		log: log,
 		repo: repo,
 	}
 }
