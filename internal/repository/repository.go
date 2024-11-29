@@ -15,7 +15,7 @@ type Songs interface {
 	CreateSong(ctx context.Context, s *models.Song) (*models.Song, error)
 	GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error)
 	DeleteSong(ctx context.Context, id uuid.UUID) error
-	UpdateSong(ctx context.Context, updatedData *models.Song) (*models.Song, error)
+	UpdateSong(ctx context.Context, s *models.Song) (*models.Song, error)
 }
 
 type Repository struct {

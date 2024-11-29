@@ -2,39 +2,38 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/leonideliseev/songLibraryCrud/internal/sqlc/queries"
-	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
+)
+
+const (
+	songsTable = "songs"
 )
 
 type SongsPostgres struct {
 	log *logging.Logger
 	builder squirrel.StatementBuilderType
 	conn *pgxpool.Pool
-	queries *queries.Queries
 }
 
 func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
-    queries := queries.New(conn)
-
 	return &SongsPostgres{
 		log: log,
 		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
 		conn: conn,
-		queries: queries,
 	}
 }
 
 // для этой функции используется squirrel, а не sqlc, так как мне нужна динамическая генерация sql запроса
-func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
-	query := d.builder.Select("*").From("songs").Limit(uint64(limit)).Offset(uint64(offset))
+func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
+	query := r.builder.Select("*").From(songsTable).Limit(uint64(limit)).Offset(uint64(offset))
 	query = addWhereWithCondition(query, "group_name", pagModel.GroupName)
 	query = addWhereWithCondition(query, "name", pagModel.Name)
 	query = addWhereWithCondition(query, "release_date", pagModel.ReleaseDate)
@@ -46,7 +45,7 @@ func (d *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel 
 		return nil, err
 	}
 
-	rows, err := d.conn.Query(ctx, q, args...)
+	rows, err := r.conn.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,62 +66,87 @@ func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) sq
 	return query
 }
 
-func (d *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
-	createSong := songConvert.FromAppToQuery(s)
-
-	songQuery, err := d.queries.CreateSong(ctx, queries.CreateSongParams{
-		GroupName: createSong.GroupName,
-		Name: createSong.Name,
-		ReleaseDate: createSong.ReleaseDate,
-		Text: createSong.Text,
-		Link: createSong.Link,
-	})
+func (r *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
+	query, args, err := r.builder.Insert(songsTable).
+	Columns("group_name", "name", "release_date", "text", "link").
+	Values(s.GroupName, s.Name, s.ReleaseDate, s.Text, s.Link).ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(&songQuery)
+	row := r.conn.QueryRow(ctx, query, args...)
+	var song models.Song
+	err = row.Scan(&song)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, err
+		}
 
-	return song, nil
+		return nil, err
+	}
+
+	return &song, nil
 }
 
-func (d *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
-	uuid := toUUID(id)
-
-	songQuery, err := d.queries.GetSong(ctx, uuid)
+func (r *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
+	q, args, err := r.builder.Select("*").From(songsTable).Where(squirrel.Eq{"id": id}).ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(&songQuery)
+	row := r.conn.QueryRow(ctx, q, args...)
 
-	return song, nil
+	var song models.Song
+	err = row.Scan(&song)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, err
+		}
+
+		return nil, err
+	}
+
+	return &song, nil
 }
 
-func (d *SongsPostgres) UpdateSong(ctx context.Context, updatedData *models.Song) (*models.Song, error) {
-	updateSong := songConvert.FromAppToQuery(updatedData)
-
-	songQuery, err := d.queries.UpdateSong(ctx, queries.UpdateSongParams{
-		ID: updateSong.ID,
-		GroupName: updateSong.GroupName,
-		Name: updateSong.Name,
-		ReleaseDate: updateSong.ReleaseDate,
-		Text: updateSong.Text,
-		Link: updateSong.Link,
-	})
+func (r *SongsPostgres) UpdateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
+	q, args, err := r.builder.
+		Update(songsTable).
+		Set("group_name", s.GroupName).
+		Set("name", s.Name).
+		Set("release_date", s.ReleaseDate).
+		Set("text", s.Text).
+		Set("link", s.Link).
+		Where(squirrel.Eq{"id": s.ID}).
+		ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	song := songConvert.FromQueryToApp(&songQuery)
+	_, err = r.conn.Exec(ctx, q, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, err
+		}
 
-	return song, nil
+		return nil, err
+	}
+
+	return s, err
 }
 
-func (d *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
-	uuid := toUUID(id)
+func (r *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
+	q, args, err := r.builder.Delete(songsTable).Where(squirrel.Eq{"id": id}).ToSql()
+	if err != nil {
+		return err
+	}
 
-	return d.queries.DeleteSong(ctx, uuid)
+	_, err = r.conn.Exec(ctx, q, args)
+	if err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 func toUUID(id uuid.UUID) pgtype.UUID {

@@ -12,12 +12,12 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 func main() {
 	logger := logging.GetLogger()
+	logger.Info("log writing started")
 	config.InitConfig(logger)
 	config.LoadEnv(logger)
 
@@ -43,10 +43,11 @@ func initServer(log *logging.Logger) *http.Server {
 func startServer(srv *http.Server, log *logging.Logger) {
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			logrus.Fatalf("error running server: %s", err.Error())
+			log.Fatalf("error running server: %s", err.Error())
 		}
 	}()
-	logrus.Print("MainApp started")
+
+	log.Info("Song Library App started")
 }
 
 func waitForShutdown(srv *http.Server, log *logging.Logger) {
@@ -54,9 +55,11 @@ func waitForShutdown(srv *http.Server, log *logging.Logger) {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 
-	logrus.Print("TodoApp Shutting Down")
+	log.Warn("Song Library App shutting down")
 
 	if err := srv.Close(); err != nil {
-		logrus.Errorf("error occurred on server shutting down: %s", err.Error())
+		log.Errorf("error occurred on server shutting down: %s", err.Error())
 	}
+
+	log.Info("Song Library App stopped")
 }
