@@ -85,7 +85,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	song, err := h.service.CreateSong(c, songConvert.FromInputToModel(input, songDetail))
+	song, err := h.service.Create(c, songConvert.FromInputToModel(input, songDetail))
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -101,7 +101,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "100")
     offset := getDefaultQuery(c, "offset", "0")
 
-	songData, err := h.service.GetSong(c, id)
+	songData, err := h.service.GetById(c, id)
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -139,7 +139,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 		return
 	}
 
-	songData, err := h.service.UpdateSong(c, id, songConvert.FromInputUpdateToModel(input))
+	songData, err := h.service.UpdateById(c, id, songConvert.FromInputUpdateToModel(input))
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -153,7 +153,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 func (h *songRouter) deleteSong(c *gin.Context) {
 	id := uuidCtx(c)
 
-	if err := h.service.DeleteSong(c, id); err != nil {
+	if err := h.service.DeleteById(c, id); err != nil {
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

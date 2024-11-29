@@ -12,10 +12,10 @@ import (
 
 type Songs interface {
 	GetAll(ctx context.Context, limit, offest int, pagModel *models.Song) ([]models.Song, error)
-	CreateSong(ctx context.Context, s *models.Song) (*models.Song, error)
-	GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error)
-	DeleteSong(ctx context.Context, id uuid.UUID) error
-	UpdateSong(ctx context.Context, s *models.Song) (*models.Song, error)
+	Create(ctx context.Context, s *models.Song) (*models.Song, error)
+	GetById(ctx context.Context, id uuid.UUID) (*models.Song, error)
+	DeleteById(ctx context.Context, id uuid.UUID) error
+	UpdateById(ctx context.Context, s *models.Song) (*models.Song, error)
 }
 
 type Repository struct {

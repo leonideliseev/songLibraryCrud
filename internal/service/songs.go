@@ -31,16 +31,16 @@ func (s *SongsService) GetAll(ctx context.Context, limit, offset int, pagModel *
 	return songs, nil
 }
 
-func (s *SongsService) CreateSong(ctx context.Context, song *models.Song) (*models.Song, error) {
-	song, err := s.repo.CreateSong(ctx, song)
+func (s *SongsService) Create(ctx context.Context, song *models.Song) (*models.Song, error) {
+	song, err := s.repo.Create(ctx, song)
 	if err != nil {
 		return nil, err
 	}
 	return song, nil
 }
 
-func (s *SongsService) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
-	song, err := s.repo.GetSong(ctx, id)
+func (s *SongsService) GetById(ctx context.Context, id uuid.UUID) (*models.Song, error) {
+	song, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +48,15 @@ func (s *SongsService) GetSong(ctx context.Context, id uuid.UUID) (*models.Song,
 	return song, nil
 }
 
-func (s *SongsService) UpdateSong(ctx context.Context, id uuid.UUID, updatedData *models.Song) (*models.Song, error) {
-	song, err := s.repo.GetSong(ctx, id)
+func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData *models.Song) (*models.Song, error) {
+	song, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	songConvert.UniteModel(song, updatedData)
 
-	song, err = s.repo.UpdateSong(ctx, song)
+	song, err = s.repo.UpdateById(ctx, song)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +64,6 @@ func (s *SongsService) UpdateSong(ctx context.Context, id uuid.UUID, updatedData
 	return song, nil
 }
 
-func (s *SongsService) DeleteSong(ctx context.Context, id uuid.UUID) error {
-	return s.repo.DeleteSong(ctx, id)
+func (s *SongsService) DeleteById(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteById(ctx, id)
 }

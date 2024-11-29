@@ -40,7 +40,6 @@ func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
 	}
 }
 
-// для этой функции используется squirrel, а не sqlc, так как мне нужна динамическая генерация sql запроса
 func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
 	query := r.builder.Select("*").From(songsTable).Limit(uint64(limit)).Offset(uint64(offset))
 	query = addWhereWithCondition(query, group_name_F, pagModel.GroupName)
@@ -75,7 +74,7 @@ func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) sq
 	return query
 }
 
-func (r *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
+func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Song, error) {
 	query, args, err := r.builder.Insert(songsTable).
 	Columns(group_name_F, name_F, release_date_F, text_F, link_F).
 	Values(s.GroupName, s.Name, s.ReleaseDate, s.Text, s.Link).ToSql()
@@ -97,7 +96,7 @@ func (r *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models
 	return &song, nil
 }
 
-func (r *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
+func (r *SongsPostgres) GetById(ctx context.Context, id uuid.UUID) (*models.Song, error) {
 	q, args, err := r.builder.Select("*").From(songsTable).Where(squirrel.Eq{id_F: id}).ToSql()
 	if err != nil {
 		return nil, err
@@ -118,7 +117,7 @@ func (r *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song
 	return &song, nil
 }
 
-func (r *SongsPostgres) UpdateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
+func (r *SongsPostgres) UpdateById(ctx context.Context, s *models.Song) (*models.Song, error) {
 	q, args, err := r.builder.
 		Update(songsTable).
 		Set(group_name_F, s.GroupName).
@@ -144,7 +143,7 @@ func (r *SongsPostgres) UpdateSong(ctx context.Context, s *models.Song) (*models
 	return s, err
 }
 
-func (r *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
+func (r *SongsPostgres) DeleteById(ctx context.Context, id uuid.UUID) error {
 	q, args, err := r.builder.Delete(songsTable).Where(squirrel.Eq{id_F: id}).ToSql()
 	if err != nil {
 		return err
