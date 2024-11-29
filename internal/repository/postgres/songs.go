@@ -7,7 +7,6 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
@@ -15,6 +14,16 @@ import (
 
 const (
 	songsTable = "songs"
+)
+
+// songs field
+const (
+	id_F = "id"
+	group_name_F = "group_name"
+	name_F = "name"
+	release_date_F = "release_date"
+	text_F = "text"
+	link_F = "link"
 )
 
 type SongsPostgres struct {
@@ -34,11 +43,11 @@ func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
 // для этой функции используется squirrel, а не sqlc, так как мне нужна динамическая генерация sql запроса
 func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
 	query := r.builder.Select("*").From(songsTable).Limit(uint64(limit)).Offset(uint64(offset))
-	query = addWhereWithCondition(query, "group_name", pagModel.GroupName)
-	query = addWhereWithCondition(query, "name", pagModel.Name)
-	query = addWhereWithCondition(query, "release_date", pagModel.ReleaseDate)
-	query = addWhereWithCondition(query, "text", pagModel.Text)
-	query = addWhereWithCondition(query, "link", pagModel.Link)
+	query = addWhereWithCondition(query, group_name_F, pagModel.GroupName)
+	query = addWhereWithCondition(query, name_F, pagModel.Name)
+	query = addWhereWithCondition(query, release_date_F, pagModel.ReleaseDate)
+	query = addWhereWithCondition(query, text_F, pagModel.Text)
+	query = addWhereWithCondition(query, link_F, pagModel.Link)
 
 	q, args, err := query.ToSql()
 	if err != nil {
@@ -68,7 +77,7 @@ func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) sq
 
 func (r *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
 	query, args, err := r.builder.Insert(songsTable).
-	Columns("group_name", "name", "release_date", "text", "link").
+	Columns(group_name_F, name_F, release_date_F, text_F, link_F).
 	Values(s.GroupName, s.Name, s.ReleaseDate, s.Text, s.Link).ToSql()
 	if err != nil {
 		return nil, err
@@ -89,7 +98,7 @@ func (r *SongsPostgres) CreateSong(ctx context.Context, s *models.Song) (*models
 }
 
 func (r *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song, error) {
-	q, args, err := r.builder.Select("*").From(songsTable).Where(squirrel.Eq{"id": id}).ToSql()
+	q, args, err := r.builder.Select("*").From(songsTable).Where(squirrel.Eq{id_F: id}).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +121,12 @@ func (r *SongsPostgres) GetSong(ctx context.Context, id uuid.UUID) (*models.Song
 func (r *SongsPostgres) UpdateSong(ctx context.Context, s *models.Song) (*models.Song, error) {
 	q, args, err := r.builder.
 		Update(songsTable).
-		Set("group_name", s.GroupName).
-		Set("name", s.Name).
-		Set("release_date", s.ReleaseDate).
-		Set("text", s.Text).
-		Set("link", s.Link).
-		Where(squirrel.Eq{"id": s.ID}).
+		Set(group_name_F, s.GroupName).
+		Set(name_F, s.Name).
+		Set(release_date_F, s.ReleaseDate).
+		Set(text_F, s.Text).
+		Set(link_F, s.Link).
+		Where(squirrel.Eq{id_F: s.ID}).
 		ToSql()
 	if err != nil {
 		return nil, err
@@ -136,7 +145,7 @@ func (r *SongsPostgres) UpdateSong(ctx context.Context, s *models.Song) (*models
 }
 
 func (r *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
-	q, args, err := r.builder.Delete(songsTable).Where(squirrel.Eq{"id": id}).ToSql()
+	q, args, err := r.builder.Delete(songsTable).Where(squirrel.Eq{id_F: id}).ToSql()
 	if err != nil {
 		return err
 	}
@@ -147,11 +156,4 @@ func (r *SongsPostgres) DeleteSong(ctx context.Context, id uuid.UUID) error {
 	}
 	
 	return nil
-}
-
-func toUUID(id uuid.UUID) pgtype.UUID {
-	return pgtype.UUID{
-		Bytes: id,
-		Valid: true,
-	}
 }
