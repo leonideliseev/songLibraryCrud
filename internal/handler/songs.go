@@ -83,7 +83,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	songDetail, err := getSongDetailsFromAPI(input.Group, input.Name)
+	songDetail, err := getSongDetailsFromAPI(input.Group, input.Name, h.log)
 	if err != nil {
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
@@ -212,34 +212,39 @@ func offsetCtx(c *gin.Context) int {
 	return uuidCtx.(int)
 }
 
-func getSongDetailsFromAPI(group, song string) (*dto.SongDetail, error) {
-	apiURL := os.Getenv("EXTERNAL_API_URL") // TODO: изменить
+func getSongDetailsFromAPI(group, song string, log *logging.Logger) (*dto.SongDetail, error) {
+	apiURL := os.Getenv("EXTERNAL_API_URL")
 	if apiURL == "" {
-		return nil, fmt.Errorf("EXTERNAL_API_URL not set in environment")
+		log.Error("EXTERNAL_API_URL not set in environment")
+		return nil, errors.New("EXTERNAL_API_URL not set in environment")
 	}
 
 	params := url.Values{}
 	params.Add("group", group)
 	params.Add("song", song)
 
-	resp, err := http.Get(apiURL + "?" + params.Encode())
+	resp, err := http.Get(apiURL + "/info" + "?" + params.Encode())
 	if err != nil {
+		log.WithError(err).Error("Error making GET request")
 		return nil, fmt.Errorf("Error making GET request: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Errorf("Get status code <%d> from external API", resp.StatusCode)
 		return nil, fmt.Errorf("Error: received status code %d from external API", resp.StatusCode)
 	}
 
 	var songDetail dto.SongDetail
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.WithError(err).Error("Error reading response body")
 		return nil, fmt.Errorf("Error reading response body: %v", err)
 	}
 
 	err = json.Unmarshal(body, &songDetail)
 	if err != nil {
+		log.WithError(err).Error("Error unmarshalling response")
 		return nil, fmt.Errorf("Error unmarshalling response: %v", err)
 	}
 

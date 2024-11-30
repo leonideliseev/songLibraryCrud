@@ -31,6 +31,7 @@ func PostgresPgx(cfg Config) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return db, db.Ping(ctx)
 }
 
@@ -40,10 +41,13 @@ func PostgresConn(cfg Config) string {
 }
 
 func RepoChoice(repo *repository.Repository, log *logging.Logger) {
-	switch viper.GetString("repo_implement.engine") {
-	case "postgresql":
-		switch viper.GetString("repo_implement.sqldriver") {
-		case "pgx/v5":
+	engine := viper.GetString("repo_implement.engine")
+	driver := viper.GetString("repo_implement.sqldriver")
+
+	switch engine {
+	case "postgresql", "PostgreSQL":
+		switch driver {
+		case "pgx/v5", "pgx":
 			conn, err := PostgresPgx(Config{
 				Host:     viper.GetString("db.host"),
 				Port:     viper.GetString("db.port"),
@@ -53,15 +57,15 @@ func RepoChoice(repo *repository.Repository, log *logging.Logger) {
 				SSLMode:  viper.GetString("db.sslmode"),
 			})
 			if err != nil {
-				//logrus.Fatalf("failed conn to db: %s", err.Error())
+				log.Fatalf("failed conn to db: %s", err.Error())
 			}
 			defer conn.Close()
 		
-			repo = repository.New(conn, log)
+			*repo = *repository.New(conn, log)
 		default:
-			panic("")
+				log.Fatalf("This driver not implemented <%s>", driver)
 		}
 	default:
-		panic("")
+		log.Fatalf("This data base not implemented <%s>", engine)
 	}
 }
