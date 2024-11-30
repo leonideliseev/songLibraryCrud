@@ -26,6 +26,7 @@ func NewHandler(service *service.Service, log *logging.Logger) *Handler {
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
+	h.log.Info("init routes...")
 	router := router(h.log)
 	validate = validator.New()
 
