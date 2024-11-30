@@ -22,6 +22,7 @@ type Service struct {
 }
 
 func NewService(repos *repository.Repository, log *logging.Logger) *Service {
+	log.Info("init service...")
 	return &Service{
 		Songs: NewSongsService(repos.Songs, log),
 	}

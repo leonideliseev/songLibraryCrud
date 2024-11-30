@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	handerror "github.com/leonideliseev/songLibraryCrud/internal/handler/error"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
-	"github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
+	songConvert "github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
@@ -24,40 +25,42 @@ import (
 const OK = http.StatusOK
 
 type songRouter struct {
-	log *logging.Logger
+	log     *logging.Logger
 	service service.Songs
 }
 
 func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logger) {
+	log.Info("init song router...")
 	r := &songRouter{
-		log: log,
+		log:     log,
 		service: service,
 	}
 
-	g.GET("/", r.getSongs)  // получение библиотеки с пагинацией
-	g.POST("/", r.createSong)  // добавление новой песни
+	g.GET("/", r.getSongs)    // получение библиотеки с пагинацией
+	g.POST("/", r.createSong) // добавление новой песни
 
 	id := g.Group("/id", middleware.CheckId())
 	{
-		id.GET("", r.getSong)  // получение текста песни
+		id.GET("", r.getSong)       // получение текста песни
 		id.PATCH("", r.updateSong)  // изменение данных песни
-		id.DELETE("", r.deleteSong)  // удаление песни
+		id.DELETE("", r.deleteSong) // удаление песни
 	}
 }
 
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := getDefaultQuery(c, "limit", "10")
-    offset := getDefaultQuery(c, "offset", "0")
+	offset := getDefaultQuery(c, "offset", "0")
 	pagModel := &models.Song{ // модель, которая будет считывать поля фильтрации
-		GroupName: c.Query("group_name"),
-		Name: c.Query("name"),
+		GroupName:   c.Query("group_name"),
+		Name:        c.Query("name"),
 		ReleaseDate: c.Query("release_date"),
-		Text: c.Query("text"),
-		Link: c.Query("link"),
+		Text:        c.Query("text"),
+		Link:        c.Query("link"),
 	}
 
 	songs, err := h.service.GetAll(c, limit, offset, pagModel)
 	if err != nil {
+		h.log.WithError(err).Info("get songs error")
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -87,6 +90,11 @@ func (h *songRouter) createSong(c *gin.Context) {
 
 	song, err := h.service.Create(c, songConvert.FromInputToModel(input, songDetail))
 	if err != nil {
+		if errors.Is(err, service.ErrSongAlreadyExists) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -99,10 +107,15 @@ func (h *songRouter) createSong(c *gin.Context) {
 func (h *songRouter) getSong(c *gin.Context) {
 	id := uuidCtx(c)
 	limit := getDefaultQuery(c, "limit", "100")
-    offset := getDefaultQuery(c, "offset", "0")
+	offset := getDefaultQuery(c, "offset", "0")
 
 	songData, err := h.service.GetById(c, id)
 	if err != nil {
+		if errors.Is(err, service.ErrSongNotFound) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -141,6 +154,16 @@ func (h *songRouter) updateSong(c *gin.Context) {
 
 	songData, err := h.service.UpdateById(c, id, songConvert.FromInputUpdateToModel(input))
 	if err != nil {
+		if errors.Is(err, service.ErrSongAlreadyExists) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if errors.Is(err, service.ErrSongNotFound) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -154,6 +177,11 @@ func (h *songRouter) deleteSong(c *gin.Context) {
 	id := uuidCtx(c)
 
 	if err := h.service.DeleteById(c, id); err != nil {
+		if errors.Is(err, service.ErrSongNotFound) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		handerror.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

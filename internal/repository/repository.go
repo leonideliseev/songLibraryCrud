@@ -23,6 +23,7 @@ type Repository struct {
 }
 
 func New(db *pgxpool.Pool, log *logging.Logger) *Repository {
+	log.Info("init repository...")
 	return &Repository{
 		Songs: postgres.NewSongsPostgres(db, log),
 	}

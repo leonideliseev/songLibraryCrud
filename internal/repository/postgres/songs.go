@@ -39,6 +39,7 @@ type SongsPostgres struct {
 }
 
 func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
+	defer log.Info("repository implementation inited successfully")
 	return &SongsPostgres{
 		log: log,
 		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
