@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -36,20 +35,20 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logg
 		service: service,
 	}
 
-	g.GET("/", r.getSongs)    // получение библиотеки с пагинацией
-	g.POST("/", r.createSong) // добавление новой песни
+	g.GET("/", r.getSongs, middleware.CheckLimit(), middleware.CheckOffset()) // получение библиотеки с пагинацией
+	g.POST("/", r.createSong)                                                 // добавление новой песни
 
 	id := g.Group("/id", middleware.CheckId())
 	{
-		id.GET("", r.getSong)       // получение текста песни
-		id.PATCH("", r.updateSong)  // изменение данных песни
-		id.DELETE("", r.deleteSong) // удаление песни
+		id.GET("", r.getSong, middleware.CheckLimit(), middleware.CheckOffset()) // получение текста песни
+		id.PATCH("", r.updateSong)                                               // изменение данных песни
+		id.DELETE("", r.deleteSong)                                              // удаление песни
 	}
 }
 
 func (h *songRouter) getSongs(c *gin.Context) {
-	limit := getDefaultQuery(c, "limit", "10")
-	offset := getDefaultQuery(c, "offset", "0")
+	limit := limitCtx(c)
+	offset := offsetCtx(c)
 	pagModel := &models.Song{ // модель, которая будет считывать поля фильтрации
 		GroupName:   c.Query("group_name"),
 		Name:        c.Query("name"),
@@ -73,11 +72,13 @@ func (h *songRouter) getSongs(c *gin.Context) {
 func (h *songRouter) createSong(c *gin.Context) {
 	input := &dto.RequestCreateSong{}
 	if err := c.ShouldBindJSON(input); err != nil {
+		h.log.WithError(err).Info("failed to read request data")
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := validate.Struct(input); err != nil {
+		h.log.WithError(err).Info("failed to validate request data")
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -106,13 +107,13 @@ func (h *songRouter) createSong(c *gin.Context) {
 
 func (h *songRouter) getSong(c *gin.Context) {
 	id := uuidCtx(c)
-	limit := getDefaultQuery(c, "limit", "100")
-	offset := getDefaultQuery(c, "offset", "0")
+	limit := limitCtx(c)
+	offset := offsetCtx(c)
 
 	songData, err := h.service.GetById(c, id)
 	if err != nil {
 		if errors.Is(err, service.ErrSongNotFound) {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("song with id <%s> not found", id))
 			return
 		}
 
@@ -143,24 +144,31 @@ func (h *songRouter) updateSong(c *gin.Context) {
 
 	var input *dto.RequestUpdateSong
 	if err := c.ShouldBindJSON(input); err != nil {
+		h.log.WithError(err).Info("failed to read request data")
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := validate.Struct(input); err != nil {
+		h.log.WithError(err).Info("failed to validate request data")
 		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	songData, err := h.service.UpdateById(c, id, songConvert.FromInputUpdateToModel(input))
 	if err != nil {
+		if errors.Is(err, service.ErrUpdatedSongNotChanged) {
+			handerror.NewErrorResponse(c, http.StatusBadRequest, "song not changed")
+			return
+		}
+
 		if errors.Is(err, service.ErrSongAlreadyExists) {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("song with group <%s> and name <%s> already exists", songData.GroupName, songData.Name))
 			return
 		}
 
 		if errors.Is(err, service.ErrSongNotFound) {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("song with id <%s> not found", id))
 			return
 		}
 
@@ -178,7 +186,7 @@ func (h *songRouter) deleteSong(c *gin.Context) {
 
 	if err := h.service.DeleteById(c, id); err != nil {
 		if errors.Is(err, service.ErrSongNotFound) {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("song with id <%s> not found", id))
 			return
 		}
 
@@ -189,26 +197,19 @@ func (h *songRouter) deleteSong(c *gin.Context) {
 	c.Status(OK)
 }
 
-func getDefaultQuery(c *gin.Context, name, def string) int {
-	param := c.DefaultQuery(name, def)
-
-	intParam, err := strconv.Atoi(param)
-	if err != nil {
-		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
-		return 0
-	}
-
-	if intParam < 0 {
-		handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be negative", name))
-		return 0
-	}
-
-	return intParam
-}
-
 func uuidCtx(c *gin.Context) uuid.UUID {
 	uuidCtx, _ := c.Get(middleware.UuidCtx)
 	return uuidCtx.(uuid.UUID)
+}
+
+func limitCtx(c *gin.Context) int {
+	uuidCtx, _ := c.Get(middleware.LimitCtx)
+	return uuidCtx.(int)
+}
+
+func offsetCtx(c *gin.Context) int {
+	uuidCtx, _ := c.Get(middleware.OffsetCtx)
+	return uuidCtx.(int)
 }
 
 func getSongDetailsFromAPI(group, song string) (*dto.SongDetail, error) {

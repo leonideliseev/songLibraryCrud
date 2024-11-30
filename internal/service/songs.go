@@ -70,6 +70,7 @@ func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData
 	}
 
 	if *updatedData == *song {
+		s.log.Error("updated data not change existed song")
 		return nil, ErrUpdatedSongNotChanged
 	}
 
@@ -78,7 +79,7 @@ func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData
 	song, err = s.repo.UpdateById(ctx, song)
 	if err != nil {
 		if errors.Is(err, repoerr.ErrAlreadyExists) {
-			return nil, ErrSongAlreadyExists
+			return song, ErrSongAlreadyExists
 		}
 
 		if errors.Is(err, repoerr.ErrNotFound) {
