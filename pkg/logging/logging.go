@@ -59,7 +59,7 @@ func init() {
 	}
 
 	err := os.Mkdir("logs", 0640)
-	if err != nil {
+	if err != nil && !os.IsExist(err) {
 		panic(err)
 	}
 
@@ -76,4 +76,6 @@ func init() {
 	})
 
 	l.SetLevel(logrus.TraceLevel)
+
+	e = logrus.NewEntry(l)
 }

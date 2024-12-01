@@ -1,6 +1,7 @@
 package songConvert
 
 import (
+	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/dto"
 	"github.com/leonideliseev/songLibraryCrud/models"
 )
@@ -34,16 +35,24 @@ func fromPointerToString(ptr *string) string {
 }
 
 func UniteModel(base, update *models.Song) {
-	uniteField(&base.ID, &update.ID)
-	uniteField(&base.GroupName, &update.GroupName)
-	uniteField(&base.Name, &update.Name)
-	uniteField(&base.ReleaseDate, &update.ReleaseDate)
-	uniteField(&base.Text, &update.Text)
-	uniteField(&base.Link, &update.Link)
+	uniteFieldArray(&base.ID, &update.ID)
+	uniteFieldString(&base.GroupName, &update.GroupName)
+	uniteFieldString(&base.Name, &update.Name)
+	uniteFieldString(&base.ReleaseDate, &update.ReleaseDate)
+	uniteFieldString(&base.Text, &update.Text)
+	uniteFieldString(&base.Link, &update.Link)
 }
 
-func uniteField(base, update *string) {
+func uniteFieldString(base, update *string) {
 	if *update == "" {
+		return
+	}
+
+	*base = *update
+}
+
+func uniteFieldArray(base, update *uuid.UUID) {
+	if *update == [16]byte{} {
 		return
 	}
 

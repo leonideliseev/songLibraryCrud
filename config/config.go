@@ -6,11 +6,12 @@ import (
 )
 
 func InitConfig(log *logging.Logger) {
+	viper.AddConfigPath("config")
 	viper.SetConfigName("config")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error init configs: %s", err.Error())
 	}
 
-	log.Info("config readed")
+	log.Info("config readed successfully")
 }

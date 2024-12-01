@@ -10,5 +10,5 @@ func LoadEnv(log *logging.Logger) {
 		log.Fatalf("error loading env: %s", err.Error())
 	}
 
-	log.Info("env loaded")
+	log.Info("env loaded successfully")
 }
