@@ -1,0 +1,278 @@
+basePath: /api/v1
+definitions:
+  dto.RequestCreateSong:
+    properties:
+      group:
+        example: Imagine Dragons
+        type: string
+      song:
+        example: Thunder
+        type: string
+    required:
+    - group
+    - song
+    type: object
+  dto.RequestUpdateSong:
+    properties:
+      group:
+        example: Imagine Dragons
+        type: string
+      link:
+        example: https://www.youtube.com/watch?v=fKopy74weus
+        type: string
+      name:
+        example: Thunder
+        type: string
+      release_date:
+        example: 27.04.2017
+        type: string
+      text:
+        example: very much cool song text
+        type: string
+    required:
+    - group
+    - name
+    - release_date
+    - text
+    type: object
+  dto.ResponseCreateSong:
+    properties:
+      song:
+        $ref: '#/definitions/models.Song'
+    type: object
+  dto.ResponseGetSong:
+    properties:
+      song:
+        $ref: '#/definitions/models.Song'
+    type: object
+  dto.ResponseGetSongs:
+    properties:
+      songs:
+        items:
+          $ref: '#/definitions/models.Song'
+        type: array
+    type: object
+  dto.ResponseUpdateSong:
+    properties:
+      song:
+        $ref: '#/definitions/models.Song'
+    type: object
+  handerror.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Song:
+    properties:
+      group:
+        type: string
+      id:
+        type: string
+      link:
+        type: string
+      name:
+        type: string
+      release_date:
+        type: string
+      text:
+        type: string
+    type: object
+info:
+  contact:
+    email: leonid.2004eliseev@mail.ru
+    name: Leonid Eliseev
+    url: https://t.me/Lenchiiiikkkk
+  description: API for managing a library of songs, including creating, retrieving,
+    updating, and deleting songs.
+  title: Song Library API
+  version: "1.0"
+paths:
+  /songs:
+    get:
+      description: Retrieves a list of songs with optional filters for group name,
+        name, release date, text, and link.
+      parameters:
+      - description: Filter by group name
+        in: query
+        name: group_name
+        type: string
+      - description: Filter by song name
+        in: query
+        name: name
+        type: string
+      - description: 'Filter by release date (format: YYYY-MM-DD)'
+        in: query
+        name: release_date
+        type: string
+      - description: Filter by text in the song
+        in: query
+        name: text
+        type: string
+      - description: Filter by link
+        in: query
+        name: link
+        type: string
+      - description: Maximum number of items to retrieve (pagination)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of items to skip (pagination)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with a list of songs
+          schema:
+            $ref: '#/definitions/dto.ResponseGetSongs'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+      summary: Get Songs
+      tags:
+      - songs
+    post:
+      consumes:
+      - application/json
+      description: Creates a new song with the provided details.
+      parameters:
+      - description: Details of the song to be created
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestCreateSong'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Song created successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseCreateSong'
+        "400":
+          description: 'Bad request: validation error or song already exists'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "409":
+          description: 'Conflict: song with the specified group and name already exists'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+      summary: Create Song
+      tags:
+      - songs
+  /songs/{uuid}:
+    delete:
+      description: Deletes a song by its ID.
+      parameters:
+      - description: Song ID (validated as UUID)
+        in: path
+        name: uuid
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Song successfully deleted
+        "400":
+          description: 'Bad request: invalid ID format'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "404":
+          description: 'Not found: song with the specified ID does not exist'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+      summary: Delete Song
+      tags:
+      - songs
+    get:
+      description: Retrieves a song by its ID. Supports pagination for song text verses.
+      parameters:
+      - description: Song ID (validated as UUID)
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Maximum number of verses to retrieve (pagination)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of verses to skip (pagination)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with the song details
+          schema:
+            $ref: '#/definitions/dto.ResponseGetSong'
+        "400":
+          description: 'Bad request: invalid ID, invalid limit/offset, or song not
+            found'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "404":
+          description: 'Not found: song with the specified ID does not exist'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+      summary: Get Song
+      tags:
+      - songs
+    patch:
+      consumes:
+      - application/json
+      description: Updates a song by its ID with new details.
+      parameters:
+      - description: Song ID (validated as UUID)
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Details for updating the song
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestUpdateSong'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with updated song details
+          schema:
+            $ref: '#/definitions/dto.ResponseUpdateSong'
+        "400":
+          description: 'Bad request: invalid id, input or song not changed'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "404":
+          description: 'Not found: song with the specified ID does not exist'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "409":
+          description: 'Conflict: song with the specified group and name already exists'
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handerror.ErrorResponse'
+      summary: Update Song
+      tags:
+      - songs
+swagger: "2.0"

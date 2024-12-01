@@ -3,11 +3,15 @@ package handler
 import (
 	"os"
 
+	_ "github.com/leonideliseev/songLibraryCrud/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var validate *validator.Validate
@@ -27,11 +31,13 @@ func NewHandler(service *service.Service, log *logging.Logger) *Handler {
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	h.log.Info("init routes...")
-	router := router(h.log)
 	validate = validator.New()
 
+	router := router(h.log)
+
 	router.Use(middleware.Log(h.log))
-	
+
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	router.GET("/ping", ping)
 	api := router.Group("/api/v1")
 	{

@@ -24,6 +24,8 @@ import (
 
 const OK = http.StatusOK
 
+var uuidPath = fmt.Sprintf("/:%s", middleware.UuidCtx)
+
 type songRouter struct {
 	log     *logging.Logger
 	service service.Songs
@@ -36,12 +38,12 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logg
 		service: service,
 	}
 
-	g.GET("", r.getSongs, middleware.CheckLimit(), middleware.CheckOffset()) // получение библиотеки с пагинацией
+	g.GET("", middleware.CheckLimit(), middleware.CheckOffset(), r.getSongs) // получение библиотеки с пагинацией
 	g.POST("", r.createSong)                                                 // добавление новой песни
 
-	id := g.Group("/id", middleware.CheckId())
+	id := g.Group(uuidPath, middleware.CheckId())
 	{
-		id.GET("", r.getSong, middleware.CheckLimit(), middleware.CheckOffset()) // получение текста песни
+		id.GET("", middleware.CheckLimit(), middleware.CheckOffset(), r.getSong) // получение текста песни
 		id.PATCH("", r.updateSong)                                               // изменение данных песни
 		id.DELETE("", r.deleteSong)                                              // удаление песни
 	}
@@ -59,7 +61,7 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logg
 // @Param limit query int false "Maximum number of items to retrieve (pagination)"
 // @Param offset query int false "Number of items to skip (pagination)"
 // @Success 200 {object} dto.ResponseGetSongs "Successful response with a list of songs"
-// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @Failure 500 {object} handerror.ErrorResponse "Internal server error"
 // @Router /songs [get]
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := limitCtx(c)
@@ -98,9 +100,9 @@ func (h *songRouter) getSongs(c *gin.Context) {
 // @Produce json
 // @Param input body dto.RequestCreateSong true "Details of the song to be created"
 // @Success 201 {object} dto.ResponseCreateSong "Song created successfully"
-// @Failure 400 {object} dto.ErrorResponse "Bad request: validation error or song already exists"
-// @Failure 409 {object} dto.ErrorResponse "Conflict: song with the specified group and name already exists"
-// @Failure 500 {object} dto.ErrorResponse "Internal server error"
+// @Failure 400 {object} handerror.ErrorResponse "Bad request: validation error or song already exists"
+// @Failure 409 {object} handerror.ErrorResponse "Conflict: song with the specified group and name already exists"
+// @Failure 500 {object} handerror.ErrorResponse "Internal server error"
 // @Router /songs [post]
 func (h *songRouter) createSong(c *gin.Context) {
 	input := &dto.RequestCreateSong{}
@@ -149,14 +151,14 @@ func (h *songRouter) createSong(c *gin.Context) {
 // @Description Retrieves a song by its ID. Supports pagination for song text verses.
 // @Tags songs
 // @Produce json
-// @Param id path string true "Song ID (validated as UUID)"
+// @Param uuid path string true "Song ID (validated as UUID)"
 // @Param limit query int false "Maximum number of verses to retrieve (pagination)"
 // @Param offset query int false "Number of verses to skip (pagination)"
 // @Success 200 {object} dto.ResponseGetSong "Successful response with the song details"
-// @Failure 400 {object} dto.ErrorResponse "Bad request: invalid ID, invalid limit/offset, or song not found"
-// @Failure 404 {object} dto.ErrorResponse "Not found: song with the specified ID does not exist"
-// @Failure 500 {object} dto.ErrorResponse "Internal server error"
-// @Router /songs/{id} [get]
+// @Failure 400 {object} handerror.ErrorResponse "Bad request: invalid ID, invalid limit/offset, or song not found"
+// @Failure 404 {object} handerror.ErrorResponse "Not found: song with the specified ID does not exist"
+// @Failure 500 {object} handerror.ErrorResponse "Internal server error"
+// @Router /songs/{uuid} [get]
 func (h *songRouter) getSong(c *gin.Context) {
 	id := uuidCtx(c)
 	limit := limitCtx(c)
@@ -196,14 +198,14 @@ func (h *songRouter) getSong(c *gin.Context) {
 // @Tags songs
 // @Accept json
 // @Produce json
-// @Param id path string true "Song ID (validated as UUID)"
+// @Param uuid path string true "Song ID (validated as UUID)"
 // @Param input body dto.RequestUpdateSong true "Details for updating the song"
 // @Success 200 {object} dto.ResponseUpdateSong "Successful response with updated song details"
-// @Failure 400 {object} dto.ErrorResponse "Bad request: invalid id, input or song not changed"
-// @Failure 404 {object} dto.ErrorResponse "Not found: song with the specified ID does not exist"
-// @Failure 409 {object} dto.ErrorResponse "Conflict: song with the specified group and name already exists"
-// @Failure 500 {object} dto.ErrorResponse "Internal server error"
-// @Router /songs/{id} [patch]
+// @Failure 400 {object} handerror.ErrorResponse "Bad request: invalid id, input or song not changed"
+// @Failure 404 {object} handerror.ErrorResponse "Not found: song with the specified ID does not exist"
+// @Failure 409 {object} handerror.ErrorResponse "Conflict: song with the specified group and name already exists"
+// @Failure 500 {object} handerror.ErrorResponse "Internal server error"
+// @Router /songs/{uuid} [patch]
 func (h *songRouter) updateSong(c *gin.Context) {
 	id := uuidCtx(c)
 
@@ -256,12 +258,12 @@ func (h *songRouter) updateSong(c *gin.Context) {
 // @Summary Delete Song
 // @Description Deletes a song by its ID.
 // @Tags songs
-// @Param id path string true "Song ID (validated as UUID)"
+// @Param uuid path string true "Song ID (validated as UUID)"
 // @Success 204 "Song successfully deleted"
-// @Failure 400 {object} dto.ErrorResponse "Bad request: invalid ID format"
-// @Failure 404 {object} dto.ErrorResponse "Not found: song with the specified ID does not exist"
-// @Failure 500 {object} dto.ErrorResponse "Internal server error"
-// @Router /songs/{id} [delete]
+// @Failure 400 {object} handerror.ErrorResponse "Bad request: invalid ID format"
+// @Failure 404 {object} handerror.ErrorResponse "Not found: song with the specified ID does not exist"
+// @Failure 500 {object} handerror.ErrorResponse "Internal server error"
+// @Router /songs/{uuid} [delete]
 func (h *songRouter) deleteSong(c *gin.Context) {
 	id := uuidCtx(c)
 

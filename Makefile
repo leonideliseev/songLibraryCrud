@@ -9,3 +9,11 @@ run: build
 .PHONY: docs
 docs:
 	swag init -g ./cmd/main.go -o ./docs --parseDependency --parseInternal
+
+.PHONY: tidy
+tidy:
+	go mod tidy
+
+.PHONY: swag
+swag:
+	swag init --generalInfo ./cmd/main.go --output ./docs

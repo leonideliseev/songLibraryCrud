@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +13,8 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
 	"github.com/leonideliseev/songLibraryCrud/internal/utils"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
+	"github.com/leonideliseev/songLibraryCrud/pkg/postgresql"
+	"github.com/leonideliseev/songLibraryCrud/schema"
 	"github.com/spf13/viper"
 )
 
@@ -30,36 +33,62 @@ func main() {
 	config.InitConfig(logger)
 	config.LoadEnv(logger)
 
-	srv := initServer(logger)
+	srv, conn := initServer(logger)
 	startServer(srv, logger)
-	waitForShutdown(srv, logger)
+	waitForShutdown(srv, conn, logger)
 }
 
-func initServer(log *logging.Logger) *http.Server {
+func initServer(log *logging.Logger) (*http.Server, Closer) {
+	config := postgresql.Config{
+		Host:     viper.GetString("db.host"),
+		Port:     viper.GetString("db.port"),
+		Username: viper.GetString("db.username"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   viper.GetString("db.dbname"),
+		SSLMode:  viper.GetString("db.sslmode"),
+	}
+
+	configTest := config
+	configTest.DBName = "postgres"
+	connTest, err := postgresql.ConnWithPgxPool(configTest)
+	if err != nil {
+		log.Fatal("")
+	}
+	defer connTest.Close()
+
+	postgresql.CreateDatabaseIfNotExists(connTest, viper.GetString("db.dbname"), log)
+
+	conn, err := postgresql.ConnWithPgxPool(config)
+	if err != nil {
+		log.Fatal("")
+	}
+
+	postgresql.Migrate(log, &schema.DB, &config)
+
 	var repo *repository.Repository
-	utils.RepoChoice(repo, log)
-	
+	utils.RepoChoice(&repo, conn, log)
+
 	serv := service.NewService(repo, log)
 	hand := handler.NewHandler(serv, log)
 
 	router := hand.InitRoutes()
 	return &http.Server{
-		Addr:    viper.GetString("port"),
+		Addr:    fmt.Sprintf(":%s", viper.GetString("port")),
 		Handler: router,
-	}
+	}, conn
 }
 
 func startServer(srv *http.Server, log *logging.Logger) {
+	defer log.Info("Song Library App started")
+
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("error running server: %s", err.Error())
 		}
 	}()
-
-	log.Info("Song Library App started")
 }
 
-func waitForShutdown(srv *http.Server, log *logging.Logger) {
+func waitForShutdown(srv *http.Server, conn Closer, log *logging.Logger) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
@@ -69,6 +98,11 @@ func waitForShutdown(srv *http.Server, log *logging.Logger) {
 	if err := srv.Close(); err != nil {
 		log.Errorf("error occurred on server shutting down: %s", err.Error())
 	}
+	conn.Close()
 
 	log.Info("Song Library App stopped")
+}
+
+type Closer interface {
+	Close()
 }
