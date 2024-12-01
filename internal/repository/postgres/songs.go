@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -55,7 +56,7 @@ func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel 
 		Offset(uint64(offset))
 	query = addWhereWithCondition(query, group_name_F, pagModel.GroupName)
 	query = addWhereWithCondition(query, name_F, pagModel.Name)
-	query = addWhereWithCondition(query, release_date_F, pagModel.ReleaseDate)
+	query = addWhereWithDateCondition(query, release_date_F, pagModel.ReleaseDate)
 	query = addWhereWithCondition(query, text_F, pagModel.Text)
 	query = addWhereWithCondition(query, link_F, pagModel.Link)
 
@@ -89,6 +90,13 @@ func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel 
 func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) squirrel.SelectBuilder {
 	if param != "" {
 		return query.Where(squirrel.ILike{field: "%" + param + "%"})
+	}
+	return query
+}
+
+func addWhereWithDateCondition(query squirrel.SelectBuilder, field string, param time.Time) squirrel.SelectBuilder {
+	if !param.IsZero() {
+		return query.Where(squirrel.Eq{field: param})
 	}
 	return query
 }

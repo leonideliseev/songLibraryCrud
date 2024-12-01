@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,10 +64,17 @@ func newSongsRoutes(g *gin.RouterGroup, service service.Songs, log *logging.Logg
 func (h *songRouter) getSongs(c *gin.Context) {
 	limit := limitCtx(c)
 	offset := offsetCtx(c)
+	timeInput, err := timeFromQuery(c)
+	if err != nil {
+		h.log.WithError(err).Info("failed to validate time")
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	pagModel := &models.Song{ // модель, которая будет считывать поля фильтрации
 		GroupName:   c.Query("group_name"),
 		Name:        c.Query("name"),
-		ReleaseDate: c.Query("release_date"),
+		ReleaseDate: timeInput,
 		Text:        c.Query("text"),
 		Link:        c.Query("link"),
 	}
@@ -114,7 +122,14 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	song, err := h.service.Create(c, songConvert.FromInputToModel(input, songDetail))
+	convSong, err := songConvert.FromInputToModel(input, songDetail)
+	if err != nil {
+		h.log.WithError(err).Info("failed to validate time")
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	song, err := h.service.Create(c, convSong)
 	if err != nil {
 		if errors.Is(err, service.ErrSongAlreadyExists) {
 			handerror.NewErrorResponse(c, http.StatusConflict, err.Error())
@@ -205,7 +220,14 @@ func (h *songRouter) updateSong(c *gin.Context) {
 		return
 	}
 
-	songData, err := h.service.UpdateById(c, id, songConvert.FromInputUpdateToModel(input))
+	convSong, err := songConvert.FromInputUpdateToModel(input)
+	if err != nil {
+		h.log.WithError(err).Info("failed to validate time")
+		handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	songData, err := h.service.UpdateById(c, id, convSong)
 	if err != nil {
 		if errors.Is(err, service.ErrUpdatedSongNotChanged) {
 			handerror.NewErrorResponse(c, http.StatusBadRequest, "song not changed")
@@ -254,6 +276,16 @@ func (h *songRouter) deleteSong(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func timeFromQuery(c *gin.Context) (time.Time, error) {
+	t := c.Query("release_date")
+
+	if t == "" {
+		return time.Time{}, nil
+	}
+
+	return time.Parse("2006-01-02", t)
 }
 
 func uuidCtx(c *gin.Context) uuid.UUID {
