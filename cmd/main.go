@@ -11,7 +11,6 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/internal/handler"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/internal/service"
-	"github.com/leonideliseev/songLibraryCrud/internal/utils"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 	"github.com/leonideliseev/songLibraryCrud/pkg/postgresql"
 	"github.com/leonideliseev/songLibraryCrud/schema"
@@ -65,11 +64,9 @@ func initServer(log *logging.Logger) (*http.Server, Closer) {
 
 	postgresql.Migrate(log, &schema.DB, &config)
 
-	var repo *repository.Repository
-	utils.RepoChoice(&repo, conn, log)
-
-	serv := service.NewService(repo, log)
-	hand := handler.NewHandler(serv, log)
+	repo := repository.New(conn, log)
+	serv := service.New(repo, log)
+	hand := handler.New(serv, log)
 
 	router := hand.InitRoutes()
 	return &http.Server{

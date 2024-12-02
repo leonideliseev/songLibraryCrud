@@ -8,6 +8,7 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 	"github.com/leonideliseev/songLibraryCrud/pkg/postgresql"
+	"github.com/spf13/viper"
 )
 
 type Songs interface {
@@ -22,9 +23,23 @@ type Repository struct {
 	Songs
 }
 
-func New(db postgresql.Conn, log *logging.Logger) *Repository {
-	log.Info("init repository...")
-	return &Repository{
-		Songs: postgres.NewSongsPostgres(db, log),
+func New(conn postgresql.Conn, log *logging.Logger) *Repository {
+	engine := viper.GetString("repo_implement.engine")
+	driver := viper.GetString("repo_implement.sqldriver")
+
+	switch engine {
+	case "postgresql", "PostgreSQL":
+		switch driver {
+		case "pgx/v5", "pgx":
+			return &Repository{
+				Songs: postgres.NewSongsPostgres(conn, log),
+			}
+		default:
+			log.Fatalf("This driver not implemented <%s>", driver)
+		}
+	default:
+		log.Fatalf("This data base not implemented <%s>", engine)
 	}
+
+	return nil
 }

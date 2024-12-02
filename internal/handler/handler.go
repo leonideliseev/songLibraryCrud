@@ -21,7 +21,7 @@ type Handler struct {
 	service *service.Service
 }
 
-func NewHandler(service *service.Service, log *logging.Logger) *Handler {
+func New(service *service.Service, log *logging.Logger) *Handler {
 	log.Info("init handler...")
 	return &Handler{
 		log: log,
