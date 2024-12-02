@@ -22,7 +22,10 @@ func (hook *writeHook) Fire(entry *logrus.Entry) error {
 	}
 
 	for _, w := range hook.Writer {
-		w.Write([]byte(line))
+		_, err := w.Write([]byte(line))
+		if err != nil {
+			return err
+		}
 	}
 
 	return err

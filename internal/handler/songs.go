@@ -179,7 +179,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 
 	verses := strings.Split(song.Text, "\n\n")
 	if offset > len(verses) {
-		handerr.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("offset can`t be more than verses in song"))
+		handerr.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("offset <%d> can`t be more than verses: %d in song", offset, len(verses)))
 		return
 	}
 

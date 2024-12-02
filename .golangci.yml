@@ -1,0 +1,23 @@
+# .golangci.yml
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - gosimple
+    - gocyclo
+
+issues:
+  exclude-dirs:
+    - build
+    - docs
+    - logs
+
+run:
+  timeout: 1m
+  tests: false
+  concurrency: 4
+
+output:
+  color: true
