@@ -1,4 +1,4 @@
-package handerror
+package handerr
 
 import "github.com/gin-gonic/gin"
 

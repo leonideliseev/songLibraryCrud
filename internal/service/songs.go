@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository/repoerr"
-	songConvert "github.com/leonideliseev/songLibraryCrud/internal/utils/convert/song"
+	"github.com/leonideliseev/songLibraryCrud/internal/service/serverr"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
@@ -38,7 +38,7 @@ func (s *SongsService) Create(ctx context.Context, song *models.Song) (*models.S
 	song, err := s.repo.Create(ctx, song)
 	if err != nil {
 		if errors.Is(err, repoerr.ErrAlreadyExists) {
-			return nil, ErrSongAlreadyExists
+			return nil, serverr.ErrSongAlreadyExists
 		}
 
 		return nil, err
@@ -50,7 +50,7 @@ func (s *SongsService) GetById(ctx context.Context, id uuid.UUID) (*models.Song,
 	song, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		if errors.Is(err, repoerr.ErrNotFound) {
-			return nil, ErrSongNotFound
+			return nil, serverr.ErrSongNotFound
 		}
 
 		return nil, err
@@ -63,7 +63,7 @@ func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData
 	song, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		if errors.Is(err, repoerr.ErrNotFound) {
-			return nil, ErrSongNotFound
+			return nil, serverr.ErrSongNotFound
 		}
 
 		return nil, err
@@ -71,19 +71,19 @@ func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData
 
 	if *updatedData == *song {
 		s.log.Error("updated data not change existed song")
-		return nil, ErrUpdatedSongNotChanged
+		return nil, serverr.ErrUpdatedSongNotChanged
 	}
 
-	songConvert.UniteModel(song, updatedData)
+	uniteModel(song, updatedData)
 
 	song, err = s.repo.UpdateById(ctx, song)
 	if err != nil {
 		if errors.Is(err, repoerr.ErrAlreadyExists) {
-			return song, ErrSongAlreadyExists
+			return song, serverr.ErrSongAlreadyExists
 		}
 
 		if errors.Is(err, repoerr.ErrNotFound) {
-			return nil, ErrSongNotFound
+			return nil, serverr.ErrSongNotFound
 		}
 
 		return nil, err
@@ -95,7 +95,7 @@ func (s *SongsService) UpdateById(ctx context.Context, id uuid.UUID, updatedData
 func (s *SongsService) DeleteById(ctx context.Context, id uuid.UUID) error {
 	err := s.repo.DeleteById(ctx, id)
 	if errors.Is(err, repoerr.ErrNotFound) {
-		return ErrSongNotFound
+		return serverr.ErrSongNotFound
 	}
 
 	return err
