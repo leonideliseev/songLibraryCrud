@@ -71,7 +71,7 @@ func initServer(log *logging.Logger) (*http.Server, Closer) {
 	router := hand.InitRoutes()
 	
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%s", viper.GetString("port")),
+		Addr:    fmt.Sprintf("%s:%s", viper.GetString("http.host"), viper.GetString("http.port")),
 		Handler: router,
 	}, conn
 }

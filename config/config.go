@@ -8,6 +8,7 @@ import (
 func InitConfig(log *logging.Logger) {
 	viper.AddConfigPath("config")
 	viper.SetConfigName("config")
+	viper.SetConfigType("yml")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error init configs: %s", err.Error())

@@ -8,7 +8,7 @@ type RequestCreateSong struct {
 type SongDetail struct {
 	ReleaseDate string `json:"release_date" validate:"required"`
 	Text 		string `json:"text" validate:"required"`
-	Link 		string `json:"link" validate:"required"`
+	Link 		string `json:"link" validate:"required,url"`
 }
 
 type ResponseCreateSong struct {

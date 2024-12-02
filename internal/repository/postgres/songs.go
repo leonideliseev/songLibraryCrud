@@ -104,7 +104,7 @@ func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Son
 		return nil, err
 	}
 
-	r.log.WithField(id_F, s.ID).Info("song created successfully")
+	r.log.WithField(id_F, song.ID).Info("song created successfully")
 	return &song, nil
 }
 
@@ -174,7 +174,6 @@ func (r *SongsPostgres) UpdateById(ctx context.Context, s *models.Song) (*models
 	}
 
 	r.log.WithField(id_F, s.ID).Info("song updated successfully")
-
 	return s, nil
 }
 

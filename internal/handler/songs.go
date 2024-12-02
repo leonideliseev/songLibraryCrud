@@ -114,6 +114,18 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
+	/*songDetail := &dto.SongDetail{
+		ReleaseDate: "2006-01-02",
+		Text: "Song",
+		Link: "https://www.youtube.com/watch?v=G43JMzdRv00",
+	}*/
+
+	if err := validate.Struct(songDetail); err != nil {
+		h.log.WithError(err).Info("failed to validate song detail")
+		handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	convSong, err := dto.FromInputToModel(input, songDetail)
 	if err != nil {
 		h.log.WithError(err).Info("failed to validate time")

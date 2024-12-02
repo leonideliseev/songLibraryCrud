@@ -69,13 +69,13 @@ func getSongDetailsFromAPI(group, song string, log *logging.Logger) (*dto.SongDe
 		return nil, fmt.Errorf("Error: received status code %d from external API", resp.StatusCode)
 	}
 
-	var songDetail dto.SongDetail
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.WithError(err).Error("Error reading response body")
 		return nil, fmt.Errorf("Error reading response body: %v", err)
 	}
 
+	var songDetail dto.SongDetail
 	err = json.Unmarshal(body, &songDetail)
 	if err != nil {
 		log.WithError(err).Error("Error unmarshalling response")
