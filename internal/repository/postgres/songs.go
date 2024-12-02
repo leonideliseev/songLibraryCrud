@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
-	"time"
+	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -13,24 +13,6 @@ import (
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 	"github.com/leonideliseev/songLibraryCrud/pkg/postgresql"
-)
-
-const (
-	songsTable = "songs"
-)
-
-// songs field
-const (
-	id_F = "id"
-	group_name_F = "group_name"
-	name_F = "name"
-	release_date_F = "release_date"
-	text_F = "text"
-	link_F = "link"
-)
-
-const (
-	uniqError = "23505"
 )
 
 type SongsPostgres struct {
@@ -49,8 +31,7 @@ func NewSongsPostgres(conn postgresql.Conn, log *logging.Logger) *SongsPostgres 
 }
 
 func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
-	query := r.builder.
-		Select("id", "group_name", "name", "release_date", "text", "link").
+	query := selectALL(r.builder).
 		From(songsTable).
 		Limit(uint64(limit)).
 		Offset(uint64(offset))
@@ -87,26 +68,12 @@ func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel 
 	return songs, nil
 }
 
-func addWhereWithCondition(query squirrel.SelectBuilder, field, param string) squirrel.SelectBuilder {
-	if param != "" {
-		return query.Where(squirrel.ILike{field: "%" + param + "%"})
-	}
-	return query
-}
-
-func addWhereWithDateCondition(query squirrel.SelectBuilder, field string, param time.Time) squirrel.SelectBuilder {
-	if !param.IsZero() {
-		return query.Where(squirrel.Eq{field: param})
-	}
-	return query
-}
-
 func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Song, error) {
 	q, args, err := r.builder.
 		Insert(songsTable).
 		Columns(group_name_F, name_F, release_date_F, text_F, link_F).
 		Values(s.GroupName, s.Name, s.ReleaseDate, s.Text, s.Link).
-        Suffix("RETURNING id, group_name, name, release_date, text, link").
+        Suffix(fmt.Sprintf("RETURNING %s", ALL)).
 		ToSql()
 	if err != nil {
 		r.log.WithError(err).Error("failed to build query")
@@ -118,20 +85,12 @@ func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Son
 	row := r.conn.QueryRow(ctx, q, args...)
 
 	var song models.Song
-	err = row.Scan(
-        &song.ID,
-        &song.GroupName,
-        &song.Name,
-        &song.ReleaseDate,
-        &song.Text,
-        &song.Link,
-	)
-	if err != nil {
+	if err := scanALL(row, &song); err != nil {
 		var pgErr *pgconn.PgError
         if errors.As(err, &pgErr) && pgErr.Code == uniqError {
             r.log.WithError(err).
-				WithField("name", s.Name).
-				WithField("group_name", s.GroupName).
+				WithField(name_F, s.Name).
+				WithField(group_name_F, s.GroupName).
 				Warn("song already exists")
             return nil, repoerr.ErrAlreadyExists
         }
@@ -140,13 +99,12 @@ func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Son
 		return nil, err
 	}
 
-	r.log.WithField("id", s.ID).Info("song created successfully")
+	r.log.WithField(id_F, s.ID).Info("song created successfully")
 	return &song, nil
 }
 
 func (r *SongsPostgres) GetById(ctx context.Context, id uuid.UUID) (*models.Song, error) {
-	q, args, err := r.builder.
-		Select("id", "group_name", "name", "release_date", "text", "link").
+	q, args, err := selectALL(r.builder).
 		From(songsTable).
 		Where(squirrel.Eq{id_F: id}).
 		ToSql()
@@ -160,21 +118,13 @@ func (r *SongsPostgres) GetById(ctx context.Context, id uuid.UUID) (*models.Song
 	row := r.conn.QueryRow(ctx, q, args...)
 
 	var song models.Song
-	err = row.Scan(
-        &song.ID,
-        &song.GroupName,
-        &song.Name,
-        &song.ReleaseDate,
-        &song.Text,
-        &song.Link,
-	)
-	if err != nil {
+	if err := scanALL(row, &song); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithError(err).WithField("id", id).Warn("song not found")
+			r.log.WithError(err).WithField(id_F, id).Warn("song not found")
 			return nil, repoerr.ErrNotFound
 		}
 
-		r.log.WithError(err).WithField("id", id).Error("failed to get song")
+		r.log.WithError(err).WithField(id_F, id).Error("failed to get song")
 		return nil, err
 	}
 
@@ -203,22 +153,22 @@ func (r *SongsPostgres) UpdateById(ctx context.Context, s *models.Song) (*models
 		var pgErr *pgconn.PgError
         if errors.As(err, &pgErr) && pgErr.Code == uniqError {
             r.log.WithError(err).
-                WithField("group_name", s.GroupName).
-                WithField("name", s.Name).
+                WithField(group_name_F, s.GroupName).
+                WithField(name_F, s.Name).
                 Warn("song update conflict: unique constraint violated")
             return nil, repoerr.ErrAlreadyExists
         }
 
-		r.log.WithError(err).WithField("id", s.ID).Error("failed to update song")
+		r.log.WithError(err).WithField(id_F, s.ID).Error("failed to update song")
 		return nil, err
 	}
 
 	if commandTag.RowsAffected() == 0 {
-		r.log.WithField("id", s.ID).Warn("no song found to update")
+		r.log.WithField(id_F, s.ID).Warn("no song found to update")
     	return nil, repoerr.ErrNotFound
 	}
 
-	r.log.WithField("id", s.ID).Info("song updated successfully")
+	r.log.WithField(id_F, s.ID).Info("song updated successfully")
 
 	return s, nil
 }
@@ -237,15 +187,15 @@ func (r *SongsPostgres) DeleteById(ctx context.Context, id uuid.UUID) error {
 
 	commandTag, err := r.conn.Exec(ctx, q, args)
 	if err != nil {
-		r.log.WithError(err).WithField("id", id).Error("failed to delete song")
+		r.log.WithError(err).WithField(id_F, id).Error("failed to delete song")
 		return err
 	}
 
 	if commandTag.RowsAffected() == 0 {
-		r.log.WithField("id", id).Warn("no song found to delete")
+		r.log.WithField(id_F, id).Warn("no song found to delete")
     	return repoerr.ErrNotFound
 	}
 
-	r.log.WithField("id", id).Info("song deleted successfully")
+	r.log.WithField(id_F, id).Info("song deleted successfully")
 	return nil
 }
