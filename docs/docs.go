@@ -83,7 +83,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     }
                 }
@@ -121,19 +121,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request: validation error or song already exists",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict: song with the specified group and name already exists",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     }
                 }
@@ -180,19 +180,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request: invalid ID, invalid limit/offset, or song not found",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found: song with the specified ID does not exist",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     }
                 }
@@ -219,19 +219,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request: invalid ID format",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found: song with the specified ID does not exist",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     }
                 }
@@ -260,7 +260,6 @@ const docTemplate = `{
                         "description": "Details for updating the song",
                         "name": "input",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/dto.RequestUpdateSong"
                         }
@@ -276,25 +275,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request: invalid id, input or song not changed",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found: song with the specified ID does not exist",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict: song with the specified group and name already exists",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handerror.ErrorResponse"
+                            "$ref": "#/definitions/handerr.ErrorResponse"
                         }
                     }
                 }
@@ -329,24 +328,19 @@ const docTemplate = `{
             ],
             "properties": {
                 "group": {
-                    "type": "string",
-                    "example": "Imagine Dragons"
+                    "type": "string"
                 },
                 "link": {
-                    "type": "string",
-                    "example": "https://www.youtube.com/watch?v=fKopy74weus"
+                    "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "example": "Thunder"
+                    "type": "string"
                 },
                 "release_date": {
-                    "type": "string",
-                    "example": "27.04.2017"
+                    "type": "string"
                 },
                 "text": {
-                    "type": "string",
-                    "example": "very much cool song text"
+                    "type": "string"
                 }
             }
         },
@@ -354,7 +348,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "song": {
-                    "$ref": "#/definitions/models.Song"
+                    "$ref": "#/definitions/dto.ResponseSong"
                 }
             }
         },
@@ -362,7 +356,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "song": {
-                    "$ref": "#/definitions/models.Song"
+                    "$ref": "#/definitions/dto.ResponseSong"
                 }
             }
         },
@@ -372,28 +366,12 @@ const docTemplate = `{
                 "songs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Song"
+                        "$ref": "#/definitions/dto.ResponseSong"
                     }
                 }
             }
         },
-        "dto.ResponseUpdateSong": {
-            "type": "object",
-            "properties": {
-                "song": {
-                    "$ref": "#/definitions/models.Song"
-                }
-            }
-        },
-        "handerror.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Song": {
+        "dto.ResponseSong": {
             "type": "object",
             "properties": {
                 "group": {
@@ -405,13 +383,29 @@ const docTemplate = `{
                 "link": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
-                },
                 "release_date": {
                     "type": "string"
                 },
+                "song": {
+                    "type": "string"
+                },
                 "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ResponseUpdateSong": {
+            "type": "object",
+            "properties": {
+                "song": {
+                    "$ref": "#/definitions/dto.ResponseSong"
+                }
+            }
+        },
+        "handerr.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }

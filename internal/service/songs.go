@@ -25,7 +25,7 @@ func NewSongsService(repo repository.Songs, log *logging.Logger) *SongsService {
 	}
 }
 
-func (s *SongsService) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
+func (s *SongsService) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]*models.Song, error) {
 	songs, err := s.repo.GetAll(ctx, limit, offset, pagModel)
 	if err != nil {
 		return nil, err

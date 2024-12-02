@@ -30,7 +30,7 @@ func NewSongsPostgres(conn postgresql.Conn, log *logging.Logger) *SongsPostgres 
 	}
 }
 
-func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]models.Song, error) {
+func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel *models.Song) ([]*models.Song, error) {
 	query := selectALL(r.builder).
 		From(songsTable).
 		Limit(uint64(limit)).
@@ -65,7 +65,12 @@ func (r *SongsPostgres) GetAll(ctx context.Context, limit, offset int, pagModel 
 		return nil, err
 	}
 
-	return songs, nil
+	songPointers := make([]*models.Song, len(songs))
+	for i := range songs {
+	    songPointers[i] = &songs[i]
+	}
+
+	return songPointers, nil
 }
 
 func (r *SongsPostgres) Create(ctx context.Context, s *models.Song) (*models.Song, error) {
@@ -185,7 +190,7 @@ func (r *SongsPostgres) DeleteById(ctx context.Context, id uuid.UUID) error {
 
 	r.log.WithField("query", q).WithField("args", args).Debug("get delete song query")
 
-	commandTag, err := r.conn.Exec(ctx, q, args)
+	commandTag, err := r.conn.Exec(ctx, q, args...)
 	if err != nil {
 		r.log.WithError(err).WithField(id_F, id).Error("failed to delete song")
 		return err

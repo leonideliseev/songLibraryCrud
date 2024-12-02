@@ -14,55 +14,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/dto"
 	"github.com/leonideliseev/songLibraryCrud/internal/handler/middleware"
-	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
 const OK = http.StatusOK
 
 var uuidPath = fmt.Sprintf("/:%s", middleware.UuidCtx)
-
-func fromInputToModel(s *dto.RequestCreateSong, sd *dto.SongDetail) (*models.Song, error) {
-	t, err := time.Parse("2006-01-02", sd.ReleaseDate)
-	if err != nil {
-		return nil, err
-	}
-
-	song := &models.Song{
-		GroupName: s.Group,
-    	Name: s.Name,
-    	ReleaseDate: t,
-    	Text: sd.Text,
-		Link: sd.Link,
-	}
-
-	return song, nil
-}
-
-func fromInputUpdateToModel(s *dto.RequestUpdateSong) (*models.Song, error) {
-	t, err := time.Parse("2006-01-02", *s.ReleaseDate)
-	if err != nil {
-		return nil, err
-	}
-
-	song := &models.Song{
-		GroupName: fromPointerToString(s.Group),
-    	Name: fromPointerToString(s.Name),
-    	ReleaseDate: t,
-    	Text: fromPointerToString(s.Text),
-		Link: fromPointerToString(s.Link),
-	}
-
-	return song, nil
-}
-
-func fromPointerToString(ptr *string) string {
-	if ptr == nil {
-		return ""
-	}
-
-	return *ptr
-}
 
 func timeFromQuery(c *gin.Context) (time.Time, error) {
 	t := c.Query("release_date")

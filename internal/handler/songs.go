@@ -79,7 +79,7 @@ func (h *songRouter) getSongs(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseGetSongs{
-		Songs: songs,
+		Songs: dto.FromModelsToResponse(songs),
 	})
 }
 
@@ -114,7 +114,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 		return
 	}
 
-	convSong, err := fromInputToModel(input, songDetail)
+	convSong, err := dto.FromInputToModel(input, songDetail)
 	if err != nil {
 		h.log.WithError(err).Info("failed to validate time")
 		handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -133,7 +133,7 @@ func (h *songRouter) createSong(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, dto.ResponseCreateSong{
-		Song: song,
+		Song: dto.FromModelToResponse(song),
 	})
 }
 
@@ -154,7 +154,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 	limit := limitCtx(c)
 	offset := offsetCtx(c)
 
-	songData, err := h.service.GetById(c, id)
+	song, err := h.service.GetById(c, id)
 	if err != nil {
 		if errors.Is(err, serverr.ErrSongNotFound) {
 			handerr.NewErrorResponse(c, http.StatusNotFound, fmt.Sprintf("song with id <%s> not found", id))
@@ -165,21 +165,21 @@ func (h *songRouter) getSong(c *gin.Context) {
 		return
 	}
 
-	verses := strings.Split(songData.Text, "\n\n")
+	verses := strings.Split(song.Text, "\n\n")
 	if offset > len(verses) {
 		handerr.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("offset can`t be more than verses in song"))
 		return
 	}
 
 	if limit > len(verses) {
-		limit = len(verses) + 1
+		limit = len(verses)
 	}
 
 	selectVerses := verses[offset:limit]
-	songData.Text = strings.Join(selectVerses, "\n\n")
+	song.Text = strings.Join(selectVerses, "\n\n")
 
 	c.JSON(OK, dto.ResponseGetSong{
-		Song: songData,
+		Song: dto.FromModelToResponse(song),
 	})
 }
 
@@ -189,7 +189,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param uuid path string true "Song ID (validated as UUID)"
-// @Param input body dto.RequestUpdateSong true "Details for updating the song"
+// @Param input body dto.RequestUpdateSong false "Details for updating the song"
 // @Success 200 {object} dto.ResponseUpdateSong "Successful response with updated song details"
 // @Failure 400 {object} handerr.ErrorResponse "Bad request: invalid id, input or song not changed"
 // @Failure 404 {object} handerr.ErrorResponse "Not found: song with the specified ID does not exist"
@@ -199,7 +199,7 @@ func (h *songRouter) getSong(c *gin.Context) {
 func (h *songRouter) updateSong(c *gin.Context) {
 	id := uuidCtx(c)
 
-	var input *dto.RequestUpdateSong
+	input := new(dto.RequestUpdateSong)
 	if err := c.ShouldBindJSON(input); err != nil {
 		h.log.WithError(err).Info("failed to read request data")
 		handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -212,14 +212,14 @@ func (h *songRouter) updateSong(c *gin.Context) {
 		return
 	}
 
-	convSong, err := fromInputUpdateToModel(input)
+	convSong, err := dto.FromInputUpdateToModel(input)
 	if err != nil {
 		h.log.WithError(err).Info("failed to validate time")
 		handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	songData, err := h.service.UpdateById(c, id, convSong)
+	song, err := h.service.UpdateById(c, id, convSong)
 	if err != nil {
 		if errors.Is(err, serverr.ErrUpdatedSongNotChanged) {
 			handerr.NewErrorResponse(c, http.StatusBadRequest, "song not changed")
@@ -227,7 +227,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 		}
 
 		if errors.Is(err, serverr.ErrSongAlreadyExists) {
-			handerr.NewErrorResponse(c, http.StatusConflict, fmt.Sprintf("song with group <%s> and name <%s> already exists", songData.GroupName, songData.Name))
+			handerr.NewErrorResponse(c, http.StatusConflict, fmt.Sprintf("song with group <%s> and name <%s> already exists", song.GroupName, song.Name))
 			return
 		}
 
@@ -241,7 +241,7 @@ func (h *songRouter) updateSong(c *gin.Context) {
 	}
 
 	c.JSON(OK, dto.ResponseUpdateSong{
-		Song: songData,
+		Song: dto.FromModelToResponse(song),
 	})
 }
 

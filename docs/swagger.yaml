@@ -15,19 +15,14 @@ definitions:
   dto.RequestUpdateSong:
     properties:
       group:
-        example: Imagine Dragons
         type: string
       link:
-        example: https://www.youtube.com/watch?v=fKopy74weus
         type: string
       name:
-        example: Thunder
         type: string
       release_date:
-        example: 27.04.2017
         type: string
       text:
-        example: very much cool song text
         type: string
     required:
     - group
@@ -38,31 +33,21 @@ definitions:
   dto.ResponseCreateSong:
     properties:
       song:
-        $ref: '#/definitions/models.Song'
+        $ref: '#/definitions/dto.ResponseSong'
     type: object
   dto.ResponseGetSong:
     properties:
       song:
-        $ref: '#/definitions/models.Song'
+        $ref: '#/definitions/dto.ResponseSong'
     type: object
   dto.ResponseGetSongs:
     properties:
       songs:
         items:
-          $ref: '#/definitions/models.Song'
+          $ref: '#/definitions/dto.ResponseSong'
         type: array
     type: object
-  dto.ResponseUpdateSong:
-    properties:
-      song:
-        $ref: '#/definitions/models.Song'
-    type: object
-  handerror.ErrorResponse:
-    properties:
-      message:
-        type: string
-    type: object
-  models.Song:
+  dto.ResponseSong:
     properties:
       group:
         type: string
@@ -70,11 +55,21 @@ definitions:
         type: string
       link:
         type: string
-      name:
-        type: string
       release_date:
         type: string
+      song:
+        type: string
       text:
+        type: string
+    type: object
+  dto.ResponseUpdateSong:
+    properties:
+      song:
+        $ref: '#/definitions/dto.ResponseSong'
+    type: object
+  handerr.ErrorResponse:
+    properties:
+      message:
         type: string
     type: object
 info:
@@ -130,7 +125,7 @@ paths:
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
       summary: Get Songs
       tags:
       - songs
@@ -155,15 +150,15 @@ paths:
         "400":
           description: 'Bad request: validation error or song already exists'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "409":
           description: 'Conflict: song with the specified group and name already exists'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
       summary: Create Song
       tags:
       - songs
@@ -182,15 +177,15 @@ paths:
         "400":
           description: 'Bad request: invalid ID format'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "404":
           description: 'Not found: song with the specified ID does not exist'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
       summary: Delete Song
       tags:
       - songs
@@ -221,15 +216,15 @@ paths:
           description: 'Bad request: invalid ID, invalid limit/offset, or song not
             found'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "404":
           description: 'Not found: song with the specified ID does not exist'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
       summary: Get Song
       tags:
       - songs
@@ -246,7 +241,6 @@ paths:
       - description: Details for updating the song
         in: body
         name: input
-        required: true
         schema:
           $ref: '#/definitions/dto.RequestUpdateSong'
       produces:
@@ -259,19 +253,19 @@ paths:
         "400":
           description: 'Bad request: invalid id, input or song not changed'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "404":
           description: 'Not found: song with the specified ID does not exist'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "409":
           description: 'Conflict: song with the specified group and name already exists'
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/handerror.ErrorResponse'
+            $ref: '#/definitions/handerr.ErrorResponse'
       summary: Update Song
       tags:
       - songs

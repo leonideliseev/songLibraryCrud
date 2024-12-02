@@ -1,7 +1,5 @@
 package dto
 
-import "github.com/leonideliseev/songLibraryCrud/models"
-
 type RequestCreateSong struct {
 	Group       string `json:"group" validate:"required" example:"Imagine Dragons"`
 	Name        string `json:"song" validate:"required" example:"Thunder"`
@@ -14,25 +12,34 @@ type SongDetail struct {
 }
 
 type ResponseCreateSong struct {
-	Song *models.Song `json:"song"`
+	Song *ResponseSong `json:"song"`
 }
 
 type RequestUpdateSong struct {
-	Group       *string `json:"group,omitempty" validate:"omitempty,required" example:"Imagine Dragons"`
-	Name        *string `json:"name,omitempty" validate:"omitempty,required" example:"Thunder"`
-	ReleaseDate *string `json:"release_date,omitempty" validate:"omitempty,required" example:"27.04.2017"`
-	Text 		*string `json:"text,omitempty" validate:"omitempty,required" example:"very much cool song text"`
-	Link 		*string `json:"link,omitempty" validate:"omitempty,url" example:"https://www.youtube.com/watch?v=fKopy74weus"`
+	Group       *string `json:"group,omitempty" validate:"omitempty,required"`
+	Name        *string `json:"name,omitempty" validate:"omitempty,required"`
+	ReleaseDate *string `json:"release_date,omitempty" validate:"omitempty,required"`
+	Text 		*string `json:"text,omitempty" validate:"omitempty,required"`
+	Link 		*string `json:"link,omitempty" validate:"omitempty,url"`
 }
 
 type ResponseUpdateSong struct {
-	Song *models.Song
+	Song *ResponseSong `json:"song"`
 }
 
 type ResponseGetSongs struct {
-	Songs []models.Song
+	Songs []*ResponseSong `json:"songs"`
 }
 
 type ResponseGetSong struct {
-	Song *models.Song
+	Song *ResponseSong `json:"song"`
+}
+
+type ResponseSong struct {
+	ID          string `json:"id"`
+	Group       string `json:"group"`
+	Name        string `json:"song"`
+	ReleaseDate string `json:"release_date"`
+	Text 		string `json:"text"`
+	Link 		string `json:"link"`
 }

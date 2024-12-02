@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	handerror "github.com/leonideliseev/songLibraryCrud/internal/handler/error"
+	"github.com/leonideliseev/songLibraryCrud/internal/handler/handerr"
 )
 
 const (
@@ -22,7 +22,7 @@ func CheckId() gin.HandlerFunc {
 
 		uuid, err := uuid.Parse(id)
 		if err != nil {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 
 			return
 		}
@@ -39,12 +39,12 @@ func CheckLimit() gin.HandlerFunc {
 
 		num, err := strconv.Atoi(readedParam)
 		if err != nil {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if num < 1 {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be less than 1: <%d>", LimitCtx, num))
+			handerr.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be less than 1: <%d>", LimitCtx, num))
 			return
 		}
 
@@ -60,12 +60,12 @@ func CheckOffset() gin.HandlerFunc {
 
 		num, err := strconv.Atoi(readedParam)
 		if err != nil {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+			handerr.NewErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if num < 0 {
-			handerror.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be less than 0: <%d>", OffsetCtx, num))
+			handerr.NewErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%s can't be less than 0: <%d>", OffsetCtx, num))
 			return
 		}
 

@@ -10,7 +10,7 @@ import (
 )
 
 type Songs interface {
-	GetAll(ctx context.Context, limit, offest int, pagModel *models.Song) ([]models.Song, error)
+	GetAll(ctx context.Context, limit, offest int, pagModel *models.Song) ([]*models.Song, error)
 	Create(ctx context.Context, song *models.Song) (*models.Song, error)
 	GetById(ctx context.Context, id uuid.UUID) (*models.Song, error)
 	DeleteById(ctx context.Context, id uuid.UUID) error
