@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/internal/repository/repoerr"
 	"github.com/leonideliseev/songLibraryCrud/models"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
+	"github.com/leonideliseev/songLibraryCrud/pkg/postgresql"
 )
 
 const (
@@ -36,10 +36,10 @@ const (
 type SongsPostgres struct {
 	log *logging.Logger
 	builder squirrel.StatementBuilderType
-	conn *pgxpool.Pool
+	conn postgresql.Conn
 }
 
-func NewSongsPostgres(conn *pgxpool.Pool, log *logging.Logger) *SongsPostgres {
+func NewSongsPostgres(conn postgresql.Conn, log *logging.Logger) *SongsPostgres {
 	defer log.Info("repository implementation inited successfully")
 	return &SongsPostgres{
 		log: log,

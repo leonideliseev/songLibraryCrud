@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leonideliseev/songLibraryCrud/pkg/logging"
 )
 
-func CreateDatabaseIfNotExists(conn *pgxpool.Pool, dbName string, log *logging.Logger) {
+func CreateDatabaseIfNotExists(conn Conn, dbName string, log *logging.Logger) {
 	var exists bool
 	err := conn.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", dbName).Scan(&exists)
 	if err != nil {
